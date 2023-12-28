@@ -6,7 +6,6 @@ use crate::insts::control::UnreachableReason;
 use crate::section::translate_module;
 use anyhow::{anyhow, Context, Result};
 use inkwell::{context, module::Module, passes::PassManager, targets};
-use std::{fs::File, io::Write, path::PathBuf};
 use wat;
 
 /// Receive a path to a Wasm binary or WAT and compile it into ELF binary.
@@ -19,18 +18,21 @@ pub fn compile_wasm_from_file(filepath: &str) -> Result<()> {
     // If input is *.wasm, do nothing
     let wasm = wat::parse_bytes(&buf).expect("error translate wat");
     assert!(wasm.starts_with(b"\0asm"));
+    
+    // TODO: make option to output wasm
+    /*
     // Output wasm
     let pathbuf = PathBuf::from(filepath);
     let filestem = pathbuf
         .file_stem()
         .expect("error extract file stem")
         .to_string_lossy()
-        .into_owned();
+        .into_owned(); 
     let wasm_path = format!("tests/wasm/{}.wasm", filestem);
     let mut file = File::create(wasm_path)?;
     file.write_all(&wasm)?;
     file.flush()?;
-
+    */
     compile_wasm(&wasm)
 }
 

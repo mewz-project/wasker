@@ -517,6 +517,7 @@ fn parse_export_section(
                 log::debug!("Export func[{}] = {}", export.name, export.index);
                 environment.function_list_name[export.index as usize] = export.name.to_string();
                 if export.name == "_start" {
+                    environment.function_list_name[export.index as usize] = "wasker_start".to_string();
                     environment.start_function_idx = Some(export.index);
                 }
             }
