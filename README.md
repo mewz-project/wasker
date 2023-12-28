@@ -42,7 +42,7 @@ mv helloworld.wat mount
 
 Run Wasker via docker (It may take few minuits to pull image, so you can build image locally by `docker build -t wasker .`)
 
-ELF file will be generated under `mount` directory.
+ELF file will be generated under `mount` directory as `wasm.o`.
 
 ```
 docker run -it --rm -v $PWD/mount:/work/mount -t ghcr.io/mewz-project/wasker:latest mount/helloworld.wat
