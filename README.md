@@ -21,7 +21,7 @@ Wasker empowers your favorite OS to serve as a Wasm runtime!
 # How to run Wasker
 Wasker compiler is based on LLVM (LLVM 15 currently).
 
-![demo](wasker.gif)
+![demo](./doc/assets/wasker.gif)
 
 
 ## Option1 : Use Docker
