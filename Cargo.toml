@@ -1,0 +1,17 @@
+[package]
+name = "wasker"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.70"
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", features = ["llvm15-0"] } 
+wat = "1.0.67"
+wasmparser = "0.102.0"
+clap = { version = "4.4.3", features = ["derive"]}
+log = "0.4.20"
+env_logger = "0.10.0"
+wabt = "0.9.0"
+pretty-hex = "0.3.0"
