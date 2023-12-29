@@ -1,0 +1,7 @@
+{
+	"name": "Wasker Dev Container",
+	"build": {
+		"context": "..",
+		"dockerfile": "./Dockerfile"
+	}
+}

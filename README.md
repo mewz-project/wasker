@@ -3,7 +3,8 @@
 # Wasker
 
 Wasker is a WebAssembly compiler.
-Wasker compiles Wasm binary into ELF format binary.
+Wasker compiles Wasm binary into ELF format binary.　
+Currently, Wasker supports WASI preview 1.
 
 ![Wasker_architecture](./doc/assets/wasker_architecture.png "Wasker_architecture")
 
@@ -52,8 +53,21 @@ docker run -it --rm -v $PWD/mount:/work/mount -t ghcr.io/mewz-project/wasker:lat
 [2023-12-28T09:20:28Z INFO  wasker::compiler] Compile success
 ```
 
+## Option2 : Use Devcontainer
+You can try Wasker on browser via Devcontainer.
 
-## Option2 : Build from source
+Start Devcontainer
+- Click `Code` -> `Codespaces` -> `New codespace` on this repository page.
+- Wait for a while, then you can see VSCode on browser.
+- Open terminal on VSCode
+
+Run Wasker
+```
+cargo run helloworld.wat
+```
+
+
+## Option3 : Build from source
 Clone repository
 ```
 git clone git@github.com:Mewz-project/Wasker.git
