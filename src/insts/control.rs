@@ -2,7 +2,7 @@
 
 use crate::environment::Environment;
 use crate::section;
-use anyhow::{anyhow, Result};
+use anyhow::{bail, Result};
 use inkwell::{
     basic_block::BasicBlock,
     values::{BasicMetadataValueEnum, FunctionValue, PhiValue},
@@ -15,7 +15,6 @@ pub enum IfElseState {
     If,
     Else,
 }
-
 
 /// Holds the state of unreachable.
 #[derive(Eq, PartialEq, Debug)]
@@ -187,7 +186,7 @@ pub fn gen_if(environment: &mut Environment<'_, '_>, blockty: BlockType) -> Resu
             end_phis.push(phi);
         }
         BlockType::FuncType(..) => {
-            return Err(anyhow!("Unexpected FuncType"));
+            bail!("Unexpected FuncType");
         }
     }
 
