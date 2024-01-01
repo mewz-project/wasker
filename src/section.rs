@@ -1,6 +1,6 @@
 //! `section` module parse each section of Wasm binary.
 
-use anyhow::{anyhow, Context, Ok, Result};
+use anyhow::{anyhow, bail, Context, Ok, Result};
 use inkwell::{
     attributes::Attribute,
     types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
@@ -137,7 +137,6 @@ pub fn translate_module(mut data: &[u8], environment: &mut Environment<'_, '_>) 
     Ok(())
 }
 
-
 /// Convert wasmparser type to inkwell type
 pub fn wasmparser_to_inkwell<'a>(
     wasmparser_type: ValType,
@@ -148,10 +147,7 @@ pub fn wasmparser_to_inkwell<'a>(
         ValType::I64 => Ok(BasicTypeEnum::IntType(inkwell_types.i64_type)),
         ValType::F32 => Ok(BasicTypeEnum::FloatType(inkwell_types.f32_type)),
         ValType::F64 => Ok(BasicTypeEnum::FloatType(inkwell_types.f64_type)),
-        _other => Err(anyhow::anyhow!(
-            "unimplemented ValType: {:?}",
-            wasmparser_type
-        )),
+        _other => bail!("unimplemented ValType: {:?}", wasmparser_type),
     }
 }
 
@@ -338,12 +334,12 @@ fn parse_type_section(
                 }
                 // Multiple return value is not supported yet
                 _other => {
-                    return Err(anyhow!("TypeSection: Unimplemented multiple return value"));
+                    bail!("TypeSection: Unimplemented multiple return value");
                 }
             };
             environment.function_signature_list.push(fn_signature);
         } else {
-            return Err(anyhow!("TypeSection: Type::ArrayType unimplemented"));
+            bail!("TypeSection: Type::ArrayType unimplemented");
         }
     }
     Ok(())
@@ -468,7 +464,7 @@ fn parse_global_section(
                 .const_float(f64::from_bits(value.bits()))
                 .as_basic_value_enum(),
             _other => {
-                return Err(anyhow::anyhow!("Unsupposed Global const value"));
+                bail!("Unsupposed Global const value");
             }
         };
 
@@ -487,7 +483,7 @@ fn parse_global_section(
                     global_value.set_initializer(&init_val.into_float_value());
                 }
                 _other => {
-                    return Err(anyhow::anyhow!("Unsupposed Global mutable value"));
+                    bail!("Unsupposed Global mutable value");
                 }
             }
             environment.global.push(Global::Mut {
@@ -517,7 +513,8 @@ fn parse_export_section(
                 log::debug!("Export func[{}] = {}", export.name, export.index);
                 environment.function_list_name[export.index as usize] = export.name.to_string();
                 if export.name == "_start" {
-                    environment.function_list_name[export.index as usize] = "wasker_start".to_string();
+                    environment.function_list_name[export.index as usize] =
+                        "wasker_start".to_string();
                     environment.start_function_idx = Some(export.index);
                 }
             }
@@ -585,15 +582,15 @@ fn parse_element_section(
                         global_table.set_initializer(&initializer);
                     }
                     ElementItems::Expressions { .. } => {
-                        return Err(anyhow!("ElementSection: Expressions item Unsupported"));
+                        bail!("ElementSection: Expressions item Unsupported");
                     }
                 }
             }
             ElementKind::Declared => {
-                return Err(anyhow!("ElementSection: Declared kind Unsupported"));
+                bail!("ElementSection: Declared kind Unsupported");
             }
             ElementKind::Passive => {
-                return Err(anyhow!("ElementSection: Passive kind Unsupported"));
+                bail!("ElementSection: Passive kind Unsupported");
             }
         }
     }
@@ -1800,7 +1797,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
                 let global = &environment.global[global_index as usize];
                 match global {
                     Global::Const { value: _ } => {
-                        return Err(anyhow::anyhow!("Global.Set to const value"));
+                        bail!("Global.Set to const value");
                     }
                     Global::Mut {
                         ptr_to_value,
