@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.70"
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", features = ["llvm15-0"] } 
+inkwell = { git = "https://github.com/TheDan64/inkwell", tag="0.1.1", version = "0.1.1", features = ["llvm15-0"] } 
 wat = "1.0.67"
 wasmparser = "0.102.0"
 clap = { version = "4.4.3", features = ["derive"]}
