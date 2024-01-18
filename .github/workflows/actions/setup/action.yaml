@@ -1,0 +1,17 @@
+name: Setup
+
+runs:
+  using: composite
+  steps:
+    - name: Setup rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Install LLVM
+      shell: bash
+      run: |
+        export LLVM_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.0/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4.tar.xz
+        sudo mkdir -p /usr/local/llvm \
+        && sudo wget ${LLVM_URL} -O /tmp/llvm.tar.xz \
+        && sudo tar -xvf /tmp/llvm.tar.xz -C /usr/local/llvm \
+        && sudo rm /tmp/llvm.tar.xz
+        echo "/usr/local/llvm/bin" >> $GITHUB_PATH
+        echo "LLVM_SYS_150_PREFIX=/usr/local/llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4" >> $GITHUB_ENV

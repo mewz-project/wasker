@@ -33,8 +33,9 @@ fn run_spec_test(testname: &str) {
                 println!("Compile Module {:?}", name);
                 compiler::compile_wasm(&module_binary).expect("compile failed");
             }
-            // TODO: support assertion
-            _ => {}
+            _ => {
+                // TODO: support assertion
+            }
         }
     }
 }
