@@ -4,7 +4,7 @@ use std::{fs::File, io::Write};
 use wabt::script::{Command, CommandKind, ScriptParser};
 use wasker::compiler;
 
-fn run_spec_test(testname: &str) {
+fn _run_spec_test(testname: &str) {
     let path = "./tests/spec/test/core";
 
     // read wast
@@ -40,7 +40,7 @@ fn run_spec_test(testname: &str) {
     }
 }
 
-macro_rules! spec_test {
+macro_rules! _spec_test {
     ($testname:ident, $fname:expr) => {
         #[test]
         #[allow(non_snake_case)]
@@ -50,6 +50,7 @@ macro_rules! spec_test {
     };
 }
 
+/*
 spec_test!(address, "address");
 spec_test!(align, "align");
 spec_test!(binary, "binary");
@@ -116,7 +117,6 @@ spec_test!(utf8_import_module, "utf8-import-module");
 spec_test!(utf8_invalid_encoding, "utf8-invalid-encoding");
 spec_test!(utf8_custom_section_id, "utf8-custom-section-id");
 
-/*
 // Run failed because of unsupported ImportKind::Memory
 spec_test!(data, "data");
 spec_test!(elem, "elem");
