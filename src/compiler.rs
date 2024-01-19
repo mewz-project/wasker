@@ -145,7 +145,7 @@ fn get_host_target_machine() -> Result<targets::TargetMachine, String> {
     let cpu = TargetMachine::get_host_cpu_name();
     let features = TargetMachine::get_host_cpu_features();
 
-    let opt_level = inkwell::OptimizationLevel::Default;
+    let opt_level = inkwell::OptimizationLevel::Aggressive;
     let reloc_mode = RelocMode::Default;
     let code_model = CodeModel::Default;
 
