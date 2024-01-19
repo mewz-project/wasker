@@ -18,7 +18,7 @@ pub fn compile_wasm_from_file(filepath: &str) -> Result<()> {
     // If input is *.wasm, do nothing
     let wasm = wat::parse_bytes(&buf).expect("error translate wat");
     assert!(wasm.starts_with(b"\0asm"));
-    
+
     // TODO: make option to output wasm
     /*
     // Output wasm
@@ -27,7 +27,7 @@ pub fn compile_wasm_from_file(filepath: &str) -> Result<()> {
         .file_stem()
         .expect("error extract file stem")
         .to_string_lossy()
-        .into_owned(); 
+        .into_owned();
     let wasm_path = format!("tests/wasm/{}.wasm", filestem);
     let mut file = File::create(wasm_path)?;
     file.write_all(&wasm)?;
@@ -75,7 +75,34 @@ pub fn compile_wasm(wasm: &[u8]) -> Result<()> {
     translate_module(wasm, &mut environment)?;
 
     let pass_manager: PassManager<Module<'_>> = PassManager::create(());
+    pass_manager.add_type_based_alias_analysis_pass();
+    pass_manager.add_sccp_pass();
+    pass_manager.add_prune_eh_pass();
+    pass_manager.add_dead_arg_elimination_pass();
+    pass_manager.add_lower_expect_intrinsic_pass();
+    pass_manager.add_scalar_repl_aggregates_pass();
+    pass_manager.add_instruction_combining_pass();
+    pass_manager.add_jump_threading_pass();
+    pass_manager.add_correlated_value_propagation_pass();
     pass_manager.add_cfg_simplification_pass();
+    pass_manager.add_reassociate_pass();
+    pass_manager.add_loop_rotate_pass();
+    pass_manager.add_ind_var_simplify_pass();
+    pass_manager.add_licm_pass();
+    pass_manager.add_loop_vectorize_pass();
+    pass_manager.add_instruction_combining_pass();
+    pass_manager.add_sccp_pass();
+    pass_manager.add_reassociate_pass();
+    pass_manager.add_cfg_simplification_pass();
+    pass_manager.add_gvn_pass();
+    pass_manager.add_memcpy_optimize_pass();
+    pass_manager.add_dead_store_elimination_pass();
+    pass_manager.add_bit_tracking_dce_pass();
+    pass_manager.add_instruction_combining_pass();
+    pass_manager.add_reassociate_pass();
+    pass_manager.add_cfg_simplification_pass();
+    pass_manager.add_slp_vectorize_pass();
+    pass_manager.add_early_cse_pass();
     pass_manager.run_on(&module);
 
     // output LLVM IR to native ELF
