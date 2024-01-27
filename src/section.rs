@@ -1450,7 +1450,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
             }
             Operator::F32Ne | Operator::F64Ne => {
                 numeric::helper_code_gen_comparison_float(
-                    inkwell::FloatPredicate::ONE,
+                    inkwell::FloatPredicate::UNE,
                     environment,
                 )
                 .expect("error gen compare float");
