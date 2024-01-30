@@ -4,7 +4,10 @@ use wasker::compiler;
 
 #[derive(Parser, Debug)]
 struct Args {
-    file: String,
+    input_file: String,
+
+    #[arg(default_value = "./")]
+    output_dir: String,
 }
 
 fn main() -> Result<()> {
@@ -13,7 +16,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     // Compile Wasm and output ELF
-    compiler::compile_wasm_from_file(&args.file)?;
+    compiler::compile_wasm_from_file(&args.input_file, &args.output_dir)?;
 
     Ok(())
 }

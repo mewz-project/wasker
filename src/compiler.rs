@@ -1,5 +1,7 @@
 //! `compiler` is the root module of Wasker compiler.
 
+use std::path;
+
 use crate::environment::Environment;
 use crate::inkwell::init_inkwell;
 use crate::insts::control::UnreachableReason;
@@ -9,7 +11,7 @@ use inkwell::{context, module::Module, passes::PassManager, targets};
 use wat;
 
 /// Receive a path to a Wasm binary or WAT and compile it into ELF binary.
-pub fn compile_wasm_from_file(filepath: &str) -> Result<()> {
+pub fn compile_wasm_from_file(filepath: &str, output_dir: &str) -> Result<()> {
     // Load bytes as either *.wat or *.wasm
     log::info!("input: {}", filepath);
     let buf: Vec<u8> = std::fs::read(filepath).expect("error read file");
@@ -19,31 +21,18 @@ pub fn compile_wasm_from_file(filepath: &str) -> Result<()> {
     let wasm = wat::parse_bytes(&buf).expect("error translate wat");
     assert!(wasm.starts_with(b"\0asm"));
 
-    // TODO: make option to output wasm
-    /*
-    // Output wasm
-    let pathbuf = PathBuf::from(filepath);
-    let filestem = pathbuf
-        .file_stem()
-        .expect("error extract file stem")
-        .to_string_lossy()
-        .into_owned();
-    let wasm_path = format!("tests/wasm/{}.wasm", filestem);
-    let mut file = File::create(wasm_path)?;
-    file.write_all(&wasm)?;
-    file.flush()?;
-    */
-    compile_wasm(&wasm)
+    compile_wasm(&wasm, output_dir)
 }
 
 /// Receive a Wasm binary and compile it into ELF binary.
-pub fn compile_wasm(wasm: &[u8]) -> Result<()> {
+pub fn compile_wasm(wasm: &[u8], output_dir: &str) -> Result<()> {
     // Prepare inkwell (Rust-wrapper of LLVM) instances
     let context = context::Context::create();
     let module = context.create_module("wasker_module");
     let builder = context.create_builder();
     let (inkwell_types, inkwell_insts) = init_inkwell(&context, &module);
     let mut environment = Environment {
+        output_dir,
         context: &context,
         module: &module,
         builder,
@@ -112,19 +101,23 @@ pub fn compile_wasm(wasm: &[u8]) -> Result<()> {
 }
 
 fn output_elf(environment: Environment) -> Result<()> {
-    log::info!("write to wasm.ll");
+    let ll_path = path::Path::new(environment.output_dir).join("wasm.ll");
+    let obj_path = path::Path::new(environment.output_dir).join("wasm.o");
+    
+    log::info!("write to {}", ll_path.display());
     environment
         .module
-        .print_to_file(std::path::Path::new("./wasm.ll"))
+        .print_to_file(ll_path.to_str().expect("error ll_path"))
         .map_err(|e| anyhow!(e.to_string()))
         .context("fail print_to_file")?;
-    log::info!("write to wasm.o, it may take a while");
+    
+    log::info!("write to {}, it may take a while", obj_path.display());
     get_host_target_machine()
         .expect("error get_host_target_machine")
         .write_to_file(
             environment.module,
             targets::FileType::Object,
-            std::path::Path::new("./wasm.o"),
+            std::path::Path::new(obj_path.to_str().expect("error obj_path")),
         )
         .map_err(|e| anyhow!(e.to_string()))
         .context("fail write_to_file")?;
