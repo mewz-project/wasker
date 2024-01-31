@@ -101,7 +101,6 @@ pub fn compile_wasm(wasm: &[u8]) -> Result<()> {
     pass_manager.add_instruction_combining_pass();
     pass_manager.add_reassociate_pass();
     pass_manager.add_cfg_simplification_pass();
-    pass_manager.add_slp_vectorize_pass();
     pass_manager.add_early_cse_pass();
     pass_manager.run_on(&module);
 
