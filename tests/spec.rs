@@ -31,7 +31,11 @@ fn _run_spec_test(testname: &str) {
 
                 // Compile test
                 println!("Compile Module {:?}", name);
-                compiler::compile_wasm(&module_binary).expect("compile failed");
+                let args = compiler::Args {
+                    input_file: "tmp.wasm".to_string(),
+                    output_dir: "./".to_string(),
+                };
+                compiler::compile_wasm(&module_binary, &args).expect("compile failed");
             }
             _ => {
                 // TODO: support assertion

@@ -12,10 +12,10 @@ use wat;
 
 #[derive(Parser, Debug)]
 pub struct Args {
-    input_file: String,
+    pub input_file: String,
 
     #[arg(default_value = "./")]
-    output_dir: String,
+    pub output_dir: String,
 }
 
 /// Receive a path to a Wasm binary or WAT and compile it into ELF binary.
