@@ -33,7 +33,7 @@ fn _run_spec_test(testname: &str) {
                 println!("Compile Module {:?}", name);
                 let args = compiler::Args {
                     input_file: "tmp.wasm".to_string(),
-                    output_dir: "./".to_string(),
+                    output_file: "/tmp/wasm.o".to_string(),
                 };
                 compiler::compile_wasm(&module_binary, &args).expect("compile failed");
             }
