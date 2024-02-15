@@ -25,7 +25,7 @@ pub enum Global<'a> {
 
 pub struct Environment<'a, 'b> {
     // Output dir
-    pub output_dir: &'b str,
+    pub output_file: &'b str,
 
     // Inkwell code generator
     pub context: &'a Context,

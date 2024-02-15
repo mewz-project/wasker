@@ -14,8 +14,8 @@ use wat;
 pub struct Args {
     pub input_file: String,
 
-    #[arg(default_value = "./")]
-    pub output_dir: String,
+    #[arg(short, long, default_value = "./wasm.o")]
+    pub output_file: String,
 }
 
 /// Receive a path to a Wasm binary or WAT and compile it into ELF binary.
@@ -40,7 +40,7 @@ pub fn compile_wasm(wasm: &[u8], args: &Args) -> Result<()> {
     let builder = context.create_builder();
     let (inkwell_types, inkwell_insts) = init_inkwell(&context, &module);
     let mut environment = Environment {
-        output_dir: args.output_dir.as_str(),
+        output_file: args.output_file.as_str(),
         context: &context,
         module: &module,
         builder,
@@ -109,8 +109,8 @@ pub fn compile_wasm(wasm: &[u8], args: &Args) -> Result<()> {
 }
 
 fn output_elf(environment: Environment) -> Result<()> {
-    let ll_path = path::Path::new(environment.output_dir).join("wasm.ll");
-    let obj_path = path::Path::new(environment.output_dir).join("wasm.o");
+    let ll_path = path::Path::new("./wasm.ll");
+    let obj_path = path::Path::new(environment.output_file);
 
     log::info!("write to {}", ll_path.display());
     environment
