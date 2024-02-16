@@ -109,8 +109,8 @@ pub fn compile_wasm(wasm: &[u8], args: &Args) -> Result<()> {
 }
 
 fn output_elf(environment: Environment) -> Result<()> {
-    let ll_path = path::Path::new("./wasm.ll");
     let obj_path = path::Path::new(environment.output_file);
+    let ll_path = obj_path.with_extension("ll");
 
     log::info!("write to {}", ll_path.display());
     environment
