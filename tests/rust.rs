@@ -4,8 +4,8 @@ use wasker::compiler;
 fn rust() {
     let wat = "./helloworld.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
