@@ -68,13 +68,15 @@ cargo run helloworld.wat
 
 
 ## Option3 : Build from source
-Clone repository
+### Clone repository
 ```
 git clone git@github.com:mewz-project/wasker.git
 cd Wasker
 ```
 
-Install LLVM locally
+### Install LLVM locally
+The commands are a little different because you need an LLVM binary built for your architecture.
+#### AMD64
 ```
 mkdir -p dependencies/llvm
 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.0/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4.tar.xz -O /tmp/llvm-15.0.0.tar.xz
@@ -82,7 +84,15 @@ tar -xvf /tmp/llvm-15.0.0.tar.xz -C dependencies/llvm
 export LLVM_SYS_150_PREFIX=$PWD/dependencies/llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4
 ```
 
-Run Wasker
+#### AArch64
+```
+mkdir -p dependencies/llvm
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.0/clang+llvm-15.0.0-aarch64-linux-gnu.tar.xz -O /tmp/llvm-15.0.0.tar.xz
+tar -xvf /tmp/llvm-15.0.0.tar.xz -C dependencies/llvm
+export LLVM_SYS_150_PREFIX=$PWD/dependencies/llvm/clang+llvm-15.0.0-aarch64-linux-gnu
+```
+
+### Run Wasker
 ```
 cargo run helloworld.wat
 ```
