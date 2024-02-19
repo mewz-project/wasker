@@ -4,8 +4,8 @@ use wasker::compiler;
 fn example() {
     let wat = "./tests/wat/block.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -14,8 +14,8 @@ fn example() {
 fn block() {
     let wat = "./tests/wat/block.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -24,8 +24,8 @@ fn block() {
 fn ret() {
     let wat = "./tests/wat/return.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -34,8 +34,8 @@ fn ret() {
 fn call() {
     let wat = "./tests/wat/call.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -44,8 +44,8 @@ fn call() {
 fn call_indirect() {
     let wat = "./tests/wat/call_indirect.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -54,8 +54,8 @@ fn call_indirect() {
 fn select() {
     let wat = "./tests/wat/select.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -64,8 +64,8 @@ fn select() {
 fn br() {
     let wat = "./tests/wat/br.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -74,8 +74,8 @@ fn br() {
 fn br_table() {
     let wat = "./tests/wat/br_table.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -84,8 +84,8 @@ fn br_table() {
 fn br_if() {
     let wat = "./tests/wat/br_if.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -94,8 +94,8 @@ fn br_if() {
 fn iff() {
     let wat = "./tests/wat/if.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -104,8 +104,8 @@ fn iff() {
 fn loopp() {
     let wat = "./tests/wat/loop.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -114,8 +114,8 @@ fn loopp() {
 fn switch() {
     let wat = "./tests/wat/switch.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }
@@ -124,8 +124,8 @@ fn switch() {
 fn bulk() {
     let wat = "./tests/wat/bulk.wat";
     let args = compiler::Args {
-        input_file: wat.to_string(),
-        output_file: "/tmp/wasm.o".to_string(),
+        input_file: wat.into(),
+        output_file: "/tmp/wasm.o".into(),
     };
     compiler::compile_wasm_from_file(&args).expect("fail compile");
 }

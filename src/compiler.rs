@@ -12,17 +12,17 @@ use wat;
 
 #[derive(Parser, Debug)]
 pub struct Args {
-    pub input_file: String,
+    pub input_file: path::PathBuf,
 
     #[arg(short, long, default_value = "./wasm.o")]
-    pub output_file: String,
+    pub output_file: path::PathBuf,
 }
 
 /// Receive a path to a Wasm binary or WAT and compile it into ELF binary.
 pub fn compile_wasm_from_file(args: &Args) -> Result<()> {
     // Load bytes as either *.wat or *.wasm
-    log::info!("input: {}", args.input_file);
-    let buf: Vec<u8> = std::fs::read(args.input_file.as_str()).expect("error read file");
+    log::info!("input: {}", args.input_file.as_path().display());
+    let buf: Vec<u8> = std::fs::read(&args.input_file).expect("error read file");
 
     // If input is *.wat, convert it into *wasm
     // If input is *.wasm, do nothing
@@ -40,7 +40,7 @@ pub fn compile_wasm(wasm: &[u8], args: &Args) -> Result<()> {
     let builder = context.create_builder();
     let (inkwell_types, inkwell_insts) = init_inkwell(&context, &module);
     let mut environment = Environment {
-        output_file: args.output_file.as_str(),
+        output_file: args.output_file.as_path(),
         context: &context,
         module: &module,
         builder,

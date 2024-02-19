@@ -9,6 +9,7 @@ use inkwell::{
     types::{BasicTypeEnum, FunctionType},
     values::{BasicValueEnum, FunctionValue, GlobalValue, IntValue},
 };
+use std::path::Path;
 
 use crate::inkwell::{InkwellInsts, InkwellTypes};
 use crate::insts::control::{ControlFrame, UnreachableReason};
@@ -25,7 +26,7 @@ pub enum Global<'a> {
 
 pub struct Environment<'a, 'b> {
     // Output dir
-    pub output_file: &'b str,
+    pub output_file: &'b Path,
 
     // Inkwell code generator
     pub context: &'a Context,
