@@ -81,6 +81,44 @@ pub struct Environment<'a, 'b> {
 }
 
 impl<'a, 'b> Environment<'a, 'b> {
+    pub fn new(
+        output_file: &'b Path,
+        context: &'a Context,
+        module: &'b Module<'a>,
+        builder: Builder<'a>,
+        inkwell_types: InkwellTypes<'a>,
+        inkwell_insts: InkwellInsts<'a>,
+    ) -> Self {
+        Self {
+            output_file,
+            context,
+            module,
+            builder,
+            inkwell_types,
+            inkwell_insts,
+            function_signature_list: Vec::new(),
+            function_list: Vec::new(),
+            function_list_signature: Vec::new(),
+            function_list_name: Vec::new(),
+            stack: Vec::new(),
+            global: Vec::new(),
+            import_section_size: 0,
+            function_section_size: 0,
+            current_function_idx: u32::MAX,
+            control_frames: Vec::new(),
+            wasker_init_block: None,
+            wasker_main_block: None,
+            linear_memory_offset_global: None,
+            linear_memory_offset_int: None,
+            start_function_idx: None,
+            unreachable_depth: 0,
+            unreachable_reason: UnreachableReason::Reachable,
+            global_table: None,
+            global_memory_size: None,
+            fn_memory_grow: None,
+        }
+    }
+
     /// Restore the stack to the specified size.
     pub fn reset_stack(&mut self, stack_size: usize) {
         self.stack.truncate(stack_size);

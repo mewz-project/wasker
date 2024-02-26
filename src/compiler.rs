@@ -2,7 +2,6 @@
 
 use crate::environment::Environment;
 use crate::inkwell::init_inkwell;
-use crate::insts::control::UnreachableReason;
 use crate::section::translate_module;
 use anyhow::{anyhow, Context, Result};
 use clap::Parser;
@@ -39,34 +38,14 @@ pub fn compile_wasm(wasm: &[u8], args: &Args) -> Result<()> {
     let module = context.create_module("wasker_module");
     let builder = context.create_builder();
     let (inkwell_types, inkwell_insts) = init_inkwell(&context, &module);
-    let mut environment = Environment {
-        output_file: args.output_file.as_path(),
-        context: &context,
-        module: &module,
+    let mut environment = Environment::new(
+        args.output_file.as_path(),
+        &context,
+        &module,
         builder,
         inkwell_types,
         inkwell_insts,
-        function_signature_list: Vec::new(),
-        function_list: Vec::new(),
-        function_list_signature: Vec::new(),
-        function_list_name: Vec::new(),
-        stack: Vec::new(),
-        global: Vec::new(),
-        import_section_size: 0,
-        function_section_size: 0,
-        current_function_idx: u32::MAX,
-        control_frames: Vec::new(),
-        wasker_init_block: None,
-        wasker_main_block: None,
-        linear_memory_offset_global: None,
-        linear_memory_offset_int: None,
-        start_function_idx: None,
-        unreachable_depth: 0,
-        unreachable_reason: UnreachableReason::Reachable,
-        global_table: None,
-        global_memory_size: None,
-        fn_memory_grow: None,
-    };
+    );
 
     // translate wasm to LLVM IR
     translate_module(wasm, &mut environment)?;
