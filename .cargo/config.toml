@@ -1,0 +1,2 @@
+[env]
+LLVM_SYS_150_PREFIX = "/opt/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4"
