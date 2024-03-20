@@ -1,3 +1,5 @@
+use std::env;
+
 fn main() {
     let llvm_version = "15.0.0";
     let target = format!("clang+llvm-{}-x86_64-linux-gnu-rhel-8.4", llvm_version);
