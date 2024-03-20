@@ -1,3 +1,5 @@
+[![CI](https://github.com/mewz-project/wasker/actions/workflows/ci.yaml/badge.svg)](https://github.com/mewz-project/wasker/actions/workflows/ci.yaml)
+
 ![Wasker_logo](./doc/assets/wasker.png "Wasker_logo")
 
 # Wasker
