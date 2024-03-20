@@ -18,7 +18,9 @@ jobs:
         with:
           submodules: true
       - name: Setup
-        uses: ./.github/workflows/actions/setup
+        uses: dtolnay/rust-toolchain@stable
+        env:
+          LLVM_SYS_150_PREFIX: /home/runner/.wasker/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
   test:
@@ -30,6 +32,8 @@ jobs:
         with:
           submodules: true
       - name: Setup
-        uses: ./.github/workflows/actions/setup
-      - name: Run test
+        uses: dtolnay/rust-toolchain@stable
+        env:
+          LLVM_SYS_150_PREFIX: /home/runner/.wasker/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4
+      - name: Run test 
         run: cargo test --all -- --nocapture
