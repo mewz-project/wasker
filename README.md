@@ -32,22 +32,35 @@ curl -sSfL https://github.com/mewz-project/wasker/releases/download/v0.1.1/waske
 
 ## Step2: Create Wasm binary
 Create any Wasm binary.
+### example1
 Please refer [examples](./examples) for building Wasm from Rust and Go. 
-### example
+
 ```
 git clone https://github.com/mewz-project/wasker.git
 cd examples/rust
 rustup target add wasm32-wasi
 cargo build --target wasm32-wasi
 ```
+### example2
+We also provide a pre-build simple Wasm binary.
+```
+git clone https://github.com/mewz-project/wasker.git
+ls helloworld.wat
+```
 
 ## Step3: Run Wasker to compile Wasm
+### example1
 ```
 $ wasker examples/rust/target/wasm32-wasi/debug/rust.wasm
 [2024-03-19T12:10:20Z INFO  wasker::compiler] input: examples/rust/target/wasm32-wasi/debug/rust.wasm
 [2024-03-19T12:10:20Z INFO  wasker::compiler] write to ./wasm.ll
 [2024-03-19T12:10:20Z INFO  wasker::compiler] write to ./wasm.o, it may take a while
 [2024-03-19T12:10:21Z INFO  wasker::compiler] Compile success
+```
+
+### example2
+```
+wasker helloworld.wat
 ```
 
 ## Step4: Run compiled Wasm
