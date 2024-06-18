@@ -1,4 +1,4 @@
-/// WASI Implementation based on Rust Std Lib
+//! WASI Implementation based on Rust Std Lib
 use crate::memory::get_memory_base;
 use wasi::{Errno, ERRNO_SUCCESS};
 

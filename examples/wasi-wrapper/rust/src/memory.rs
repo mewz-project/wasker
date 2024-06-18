@@ -1,4 +1,4 @@
-/// Linear Memory
+//! Linear Memory
 use std::sync::Mutex;
 
 const LINEAR_MEMORY_BLOCK_SIZE: i32 = 64 * 1024;
@@ -13,7 +13,7 @@ pub unsafe fn get_memory_base() -> *mut u8 {
 }
 
 unsafe fn alloc_memory() -> *mut u8 {
-    use std::alloc::{alloc, Layout}; // delloc
+    use std::alloc::{alloc, Layout};
     unsafe {
         LINEAR_MEMORY_BASE = alloc(
             Layout::from_size_align(

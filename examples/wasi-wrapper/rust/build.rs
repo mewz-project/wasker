@@ -33,7 +33,7 @@ fn main() {
             &target_obj_name,
         ])
         .status()
-        .expect("failed to execute process");
+        .expect("failed to convert obj into lib");
 
     println!("cargo:rustc-link-arg=-no-pie");
     println!("cargo:rustc-link-search=native={}", path_to_str(wasm_path));
