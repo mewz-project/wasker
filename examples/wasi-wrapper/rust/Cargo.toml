@@ -1,0 +1,8 @@
+[package]
+name = "wasi-wrapper"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+wasi = "0.11.0+wasi-snapshot-preview1"
