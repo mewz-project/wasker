@@ -391,7 +391,7 @@ pub fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTable) ->
 
 pub fn gen_end<'a>(
     environment: &mut Environment<'a, '_>,
-    current_fn: FunctionValue<'a>,
+    current_fn: &FunctionValue<'a>,
 ) -> Result<()> {
     let current_block = environment
         .builder
@@ -624,7 +624,7 @@ pub fn gen_drop(environment: &mut Environment<'_, '_>) -> Result<()> {
 
 pub fn gen_return(
     environment: &mut Environment<'_, '_>,
-    current_fn: FunctionValue<'_>,
+    current_fn: &FunctionValue<'_>,
 ) -> Result<()> {
     // Phi
     environment.unreachable_depth += 1;
