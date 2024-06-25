@@ -139,7 +139,7 @@ pub fn translate_module(mut data: &[u8], environment: &mut Environment<'_, '_>) 
 
 /// Convert wasmparser type to inkwell type
 pub fn wasmparser_to_inkwell<'a>(
-    wasmparser_type: ValType,
+    wasmparser_type: &ValType,
     inkwell_types: &InkwellTypes<'a>,
 ) -> Result<BasicTypeEnum<'a>> {
     match wasmparser_type {
@@ -318,7 +318,7 @@ fn parse_type_section(
             // Convert wasmparser type to inkwell type
             let mut params_inkwell: Vec<BasicMetadataTypeEnum> = Vec::new();
             for param in params.iter() {
-                let param_inkwell = wasmparser_to_inkwell(*param, &environment.inkwell_types);
+                let param_inkwell = wasmparser_to_inkwell(param, &environment.inkwell_types);
                 params_inkwell.push(param_inkwell?.into());
             }
 
@@ -329,7 +329,7 @@ fn parse_type_section(
                 }
                 1 => {
                     let return_inkwell =
-                        wasmparser_to_inkwell(returns[0], &environment.inkwell_types);
+                        wasmparser_to_inkwell(&returns[0], &environment.inkwell_types);
                     return_inkwell?.fn_type(&params_inkwell, false)
                 }
                 // Multiple return value is not supported yet
@@ -439,7 +439,7 @@ fn parse_global_section(
     for (i, global) in globals.into_iter().enumerate() {
         let global = global?;
         let gname = format!("global_{}", i);
-        let ty = wasmparser_to_inkwell(global.ty.content_type, &environment.inkwell_types)?;
+        let ty = wasmparser_to_inkwell(&global.ty.content_type, &environment.inkwell_types)?;
 
         // Get initial value
         let init_expr_binary_reader = &mut global.init_expr.get_binary_reader();
@@ -792,8 +792,8 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
     let mut local_reader = f.get_locals_reader()?;
     let num_locals = local_reader.get_count();
     for _ in 0..num_locals {
-        let (count, wp_ty) = local_reader.read()?;
-        let ty = wasmparser_to_inkwell(wp_ty, &environment.inkwell_types)?;
+        let (count, ty) = local_reader.read()?;
+        let ty = wasmparser_to_inkwell(&ty, &environment.inkwell_types)?;
         for _ in 0..count {
             let alloca = environment.builder.build_alloca(ty, "local");
             environment.builder.build_store(alloca, ty.const_zero());
@@ -810,8 +810,6 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
             anyhow::Result::Ok(v) => v,
             Err(e) => return Err(e.into()),
         };
-        // For debug
-        let op_debug = op.clone();
 
         log::debug!("CodeSection: op[{}] = {:?}", num_op, op);
         num_op += 1;
@@ -859,7 +857,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
             }
         }
 
-        match op {
+        match &op {
             /******************************
               Control flow instructions
             ******************************/
@@ -876,10 +874,10 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
                 control::gen_else(environment).context("error gen Else")?;
             }
             Operator::Br { relative_depth } => {
-                control::gen_br(environment, relative_depth).context("error gen Br")?;
+                control::gen_br(environment, *relative_depth).context("error gen Br")?;
             }
             Operator::BrIf { relative_depth } => {
-                control::gen_brif(environment, relative_depth).context("errpr gen BrIf")?;
+                control::gen_brif(environment, *relative_depth).context("errpr gen BrIf")?;
             }
             Operator::BrTable { targets } => {
                 control::gen_br_table(environment, targets).context("error gen BrTable")?;
@@ -893,14 +891,14 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
                 control::gen_end(environment, current_fn).context("error gen End")?;
             }
             Operator::Call { function_index } => {
-                control::gen_call(environment, function_index).context("error gen Call")?;
+                control::gen_call(environment, *function_index).context("error gen Call")?;
             }
             Operator::CallIndirect {
                 type_index,
                 table_index,
                 table_byte,
             } => {
-                control::gen_call_indirect(environment, type_index, table_index, table_byte)
+                control::gen_call_indirect(environment, *type_index, *table_index, *table_byte)
                     .context("error gen CallIndirect")?;
             }
             Operator::Drop => {
@@ -925,14 +923,14 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
                 let i = environment
                     .inkwell_types
                     .i32_type
-                    .const_int(value as u64, false);
+                    .const_int(*value as u64, false);
                 environment.stack.push(i.as_basic_value_enum());
             }
             Operator::I64Const { value } => {
                 let i = environment
                     .inkwell_types
                     .i64_type
-                    .const_int(value as u64, false);
+                    .const_int(*value as u64, false);
                 environment.stack.push(i.as_basic_value_enum());
             }
             Operator::F32Const { value } => {
@@ -1752,10 +1750,10 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
             ******************************/
             // Loads the value of local variable to stack
             Operator::LocalGet { local_index } => {
-                assert!(local_index < locals.len() as u32);
-                let local_value_pointer = locals[local_index as usize];
+                assert!(*local_index < locals.len() as u32);
+                let local_value_pointer = locals[*local_index as usize];
                 let v = environment.builder.build_load(
-                    locals_type[local_index as usize],
+                    locals_type[*local_index as usize],
                     local_value_pointer,
                     "",
                 );
@@ -1763,21 +1761,21 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
             }
             // Sets the value of the local variable
             Operator::LocalSet { local_index } => {
-                assert!(local_index < locals.len() as u32);
-                let local_value_pointer = locals[local_index as usize];
+                assert!(*local_index < locals.len() as u32);
+                let local_value_pointer = locals[*local_index as usize];
                 let v = environment.stack.pop().expect("stack empty");
                 environment.builder.build_store(local_value_pointer, v);
             }
             Operator::LocalTee { local_index } => {
-                assert!(local_index < locals.len() as u32);
-                let ptr_local_value = locals[local_index as usize];
+                assert!(*local_index < locals.len() as u32);
+                let ptr_local_value = locals[*local_index as usize];
                 let v = environment.stack.pop().expect("stack empty");
                 environment.builder.build_store(ptr_local_value, v);
                 environment.stack.push(v);
             }
             Operator::GlobalGet { global_index } => {
-                assert!(global_index < environment.global.len() as u32);
-                let global = &environment.global[global_index as usize];
+                assert!(*global_index < environment.global.len() as u32);
+                let global = &environment.global[*global_index as usize];
                 match global {
                     Global::Const { value } => {
                         environment.stack.push(*value);
@@ -1793,8 +1791,8 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
                 };
             }
             Operator::GlobalSet { global_index } => {
-                assert!(global_index < environment.global.len() as u32);
-                let global = &environment.global[global_index as usize];
+                assert!(*global_index < environment.global.len() as u32);
+                let global = &environment.global[*global_index as usize];
                 match global {
                     Global::Const { value: _ } => {
                         bail!("Global.Set to const value");
@@ -1826,11 +1824,11 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
                 memory::memory_grow(environment).context("error gen MemoryGrow")?;
             }
             Operator::MemoryCopy { dst_mem, src_mem } => {
-                memory::memory_copy(environment, dst_mem, src_mem)
+                memory::memory_copy(environment, *dst_mem, *src_mem)
                     .context("error gen MemoryCopy")?;
             }
             Operator::MemoryFill { mem } => {
-                memory::memory_fill(environment, mem).context("error gen MemoryFill")?;
+                memory::memory_fill(environment, *mem).context("error gen MemoryFill")?;
             }
             // TODO: memarg
             Operator::I32Load { memarg } => {
@@ -2116,8 +2114,8 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
                     .context("error gen GeU")?;
             }
             _other => {
-                log::error!("Unimplemented Inst {:?}", op_debug);
-                unreachable!("- unimplemented inst {:?}", op_debug);
+                log::error!("Unimplemented Inst {:?}", op);
+                unreachable!("- unimplemented inst {:?}", op);
             }
         }
     }

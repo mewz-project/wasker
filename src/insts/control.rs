@@ -71,7 +71,7 @@ impl<'a> ControlFrame<'a> {
     }
 }
 
-pub fn gen_block(environment: &mut Environment<'_, '_>, blockty: BlockType) -> Result<()> {
+pub fn gen_block(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
     let current_block = environment.builder.get_insert_block().unwrap();
     let next_block = environment.context.append_basic_block(
         environment.function_list[environment.current_function_idx as usize],
@@ -105,7 +105,7 @@ pub fn gen_block(environment: &mut Environment<'_, '_>, blockty: BlockType) -> R
     Ok(())
 }
 
-pub fn gen_loop(environment: &mut Environment<'_, '_>, blockty: BlockType) -> Result<()> {
+pub fn gen_loop(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
     let current_block = environment.builder.get_insert_block().unwrap();
 
     // Create blocks
@@ -152,7 +152,7 @@ pub fn gen_loop(environment: &mut Environment<'_, '_>, blockty: BlockType) -> Re
     Ok(())
 }
 
-pub fn gen_if(environment: &mut Environment<'_, '_>, blockty: BlockType) -> Result<()> {
+pub fn gen_if(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
     let current_block = environment
         .builder
         .get_insert_block()
@@ -332,7 +332,7 @@ pub fn gen_brif(environment: &mut Environment<'_, '_>, relative_depth: u32) -> R
     Ok(())
 }
 
-pub fn gen_br_table(environment: &mut Environment<'_, '_>, targets: BrTable) -> Result<()> {
+pub fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTable) -> Result<()> {
     let current_block = environment
         .builder
         .get_insert_block()
