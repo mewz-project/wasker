@@ -776,7 +776,6 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
 
     // params
     let mut locals = vec![];
-    let mut locals_type = vec![];
     for idx in 0..current_fn.count_params() {
         let v = current_fn
             .get_nth_param(idx)
@@ -784,8 +783,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
         let ty = current_fn.get_type().get_param_types()[idx as usize];
         let alloca = environment.builder.build_alloca(ty, "param");
         environment.builder.build_store(alloca, v);
-        locals.push(alloca);
-        locals_type.push(ty);
+        locals.push((alloca, ty));
     }
 
     // locals
@@ -797,8 +795,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
         for _ in 0..count {
             let alloca = environment.builder.build_alloca(ty, "local");
             environment.builder.build_store(alloca, ty.const_zero());
-            locals.push(alloca);
-            locals_type.push(ty);
+            locals.push((alloca, ty));
         }
     }
 
@@ -814,7 +811,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
         log::debug!("CodeSection: op[{}] = {:?}", num_op, op);
         num_op += 1;
 
-        parse_instruction(environment, &op, &current_fn, &locals, &locals_type)?;
+        parse_instruction(environment, &op, &current_fn, &locals)?;
     }
     Ok(())
 }
@@ -823,8 +820,7 @@ fn parse_instruction<'a>(
     environment: &mut Environment<'a, '_>,
     op: &Operator,
     current_fn: &FunctionValue<'a>,
-    locals: &[PointerValue<'a>],
-    locals_type: &[BasicTypeEnum<'a>],
+    locals: &[(PointerValue<'a>, BasicTypeEnum<'a>)],
 ) -> Result<()> {
     if environment.unreachable_depth != 0 {
         log::debug!("- under unreachable");
@@ -1737,10 +1733,9 @@ fn parse_instruction<'a>(
         // Loads the value of local variable to stack
         Operator::LocalGet { local_index } => {
             assert!(*local_index < locals.len() as u32);
-            let local_value_pointer = locals[*local_index as usize];
             let v = environment.builder.build_load(
-                locals_type[*local_index as usize],
-                local_value_pointer,
+                locals[*local_index as usize].1,
+                locals[*local_index as usize].0,
                 "",
             );
             environment.stack.push(v);
@@ -1748,13 +1743,13 @@ fn parse_instruction<'a>(
         // Sets the value of the local variable
         Operator::LocalSet { local_index } => {
             assert!(*local_index < locals.len() as u32);
-            let local_value_pointer = locals[*local_index as usize];
+            let local_value_pointer = locals[*local_index as usize].0;
             let v = environment.stack.pop().expect("stack empty");
             environment.builder.build_store(local_value_pointer, v);
         }
         Operator::LocalTee { local_index } => {
             assert!(*local_index < locals.len() as u32);
-            let ptr_local_value = locals[*local_index as usize];
+            let ptr_local_value = locals[*local_index as usize].0;
             let v = environment.stack.pop().expect("stack empty");
             environment.builder.build_store(ptr_local_value, v);
             environment.stack.push(v);
