@@ -71,7 +71,7 @@ impl<'a> ControlFrame<'a> {
     }
 }
 
-pub fn gen_block(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
+pub(super) fn gen_block(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
     let current_block = environment.builder.get_insert_block().unwrap();
     let next_block = environment.context.append_basic_block(
         environment.function_list[environment.current_function_idx as usize],
@@ -105,7 +105,7 @@ pub fn gen_block(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> 
     Ok(())
 }
 
-pub fn gen_loop(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
+pub(super) fn gen_loop(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
     let current_block = environment.builder.get_insert_block().unwrap();
 
     // Create blocks
@@ -152,7 +152,7 @@ pub fn gen_loop(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> R
     Ok(())
 }
 
-pub fn gen_if(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
+pub(super) fn gen_if(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Result<()> {
     let current_block = environment
         .builder
         .get_insert_block()
@@ -221,7 +221,7 @@ pub fn gen_if(environment: &mut Environment<'_, '_>, blockty: &BlockType) -> Res
     Ok(())
 }
 
-pub fn gen_else(environment: &mut Environment<'_, '_>) -> Result<()> {
+pub(super) fn gen_else(environment: &mut Environment<'_, '_>) -> Result<()> {
     let current_block = environment
         .builder
         .get_insert_block()
@@ -263,7 +263,8 @@ pub fn gen_else(environment: &mut Environment<'_, '_>) -> Result<()> {
     }
     Ok(())
 }
-pub fn gen_br(environment: &mut Environment<'_, '_>, relative_depth: u32) -> Result<()> {
+
+pub(super) fn gen_br(environment: &mut Environment<'_, '_>, relative_depth: u32) -> Result<()> {
     let current_block = environment
         .builder
         .get_insert_block()
@@ -289,7 +290,7 @@ pub fn gen_br(environment: &mut Environment<'_, '_>, relative_depth: u32) -> Res
     Ok(())
 }
 
-pub fn gen_brif(environment: &mut Environment<'_, '_>, relative_depth: u32) -> Result<()> {
+pub(super) fn gen_brif(environment: &mut Environment<'_, '_>, relative_depth: u32) -> Result<()> {
     let current_block = environment
         .builder
         .get_insert_block()
@@ -332,7 +333,7 @@ pub fn gen_brif(environment: &mut Environment<'_, '_>, relative_depth: u32) -> R
     Ok(())
 }
 
-pub fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTable) -> Result<()> {
+pub(super) fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTable) -> Result<()> {
     let current_block = environment
         .builder
         .get_insert_block()
@@ -389,7 +390,7 @@ pub fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTable) ->
     Ok(())
 }
 
-pub fn gen_end<'a>(
+pub(super) fn gen_end<'a>(
     environment: &mut Environment<'a, '_>,
     current_fn: &FunctionValue<'a>,
 ) -> Result<()> {
@@ -512,7 +513,7 @@ pub fn gen_end<'a>(
     Ok(())
 }
 
-pub fn gen_call(environment: &mut Environment<'_, '_>, function_index: u32) -> Result<()> {
+pub(super) fn gen_call(environment: &mut Environment<'_, '_>, function_index: u32) -> Result<()> {
     let fn_called = environment.function_list[function_index as usize];
 
     // collect args from stack
@@ -560,7 +561,7 @@ pub fn gen_call(environment: &mut Environment<'_, '_>, function_index: u32) -> R
     Ok(())
 }
 
-pub fn gen_call_indirect(
+pub(super) fn gen_call_indirect(
     environment: &mut Environment<'_, '_>,
     type_index: u32,
     table_index: u32,
@@ -617,12 +618,12 @@ pub fn gen_call_indirect(
     Ok(())
 }
 
-pub fn gen_drop(environment: &mut Environment<'_, '_>) -> Result<()> {
+pub(super) fn gen_drop(environment: &mut Environment<'_, '_>) -> Result<()> {
     environment.stack.pop().expect("stack empty");
     Ok(())
 }
 
-pub fn gen_return(
+pub(super) fn gen_return(
     environment: &mut Environment<'_, '_>,
     current_fn: &FunctionValue<'_>,
 ) -> Result<()> {
@@ -642,7 +643,7 @@ pub fn gen_return(
     Ok(())
 }
 
-pub fn gen_select(environment: &mut Environment<'_, '_>) -> Result<()> {
+pub(super) fn gen_select(environment: &mut Environment<'_, '_>) -> Result<()> {
     let v3 = environment.stack.pop().expect("stack empty");
     let v2 = environment.stack.pop().expect("stack empty");
     let v1 = environment.stack.pop().expect("stack empty");
@@ -657,7 +658,7 @@ pub fn gen_select(environment: &mut Environment<'_, '_>) -> Result<()> {
     Ok(())
 }
 
-pub fn gen_unreachable(environment: &mut Environment<'_, '_>) -> Result<()> {
+pub(super) fn gen_unreachable(environment: &mut Environment<'_, '_>) -> Result<()> {
     environment.unreachable_depth += 1;
     environment.unreachable_reason = UnreachableReason::Unreachable;
     environment.builder.build_unreachable();
