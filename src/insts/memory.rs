@@ -125,7 +125,7 @@ pub fn memory_fill(environment: &mut Environment<'_, '_>, mem: u32) -> Result<()
 
 // generate IR for load instructions
 pub fn generate_load<'a>(
-    memarg: MemArg,
+    memarg: &MemArg,
     extended_type: inkwell::types::BasicTypeEnum<'a>,
     load_type: inkwell::types::BasicTypeEnum<'a>,
     signed: bool,
@@ -189,7 +189,7 @@ pub fn generate_load<'a>(
 // generate IR for store instructions
 // see generate_load
 pub fn generate_store<'a>(
-    memarg: MemArg,
+    memarg: &MemArg,
     store_type: inkwell::types::BasicTypeEnum<'a>,
     require_narrow: bool,
     environment: &mut Environment<'a, '_>,
