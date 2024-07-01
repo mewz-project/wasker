@@ -17,21 +17,13 @@ fn main() {
         .status()
         .expect("failed to compile target into WASM");
     Command::new("wasker")
-        .args([
-            "-o",
-            &target_obj_name,
-            "target/wasm32-wasi/debug/rust.wasm",
-        ])
+        .args(["-o", &target_obj_name, "target/wasm32-wasi/debug/rust.wasm"])
         .status()
         .expect("failed to compile target into obj");
 
     let target_lib_name = format!("lib{}.a", target_name);
     Command::new("ar")
-        .args([
-            "rcs",
-            &target_lib_name,
-            &target_obj_name,
-        ])
+        .args(["rcs", &target_lib_name, &target_obj_name])
         .status()
         .expect("failed to convert obj into lib");
 
