@@ -1,20 +1,7 @@
 use std::io::Read;
 
-use std::{fs::File, io::Write};
 use wasker::compiler::{self, compile_wasm};
-use wast::{
-    core::{HeapType, NanPattern, WastRetCore},
-    lexer::Lexer,
-    parser::ParseBuffer,
-    token::Span,
-    QuoteWat,
-    Wast,
-    WastDirective,
-    WastExecute,
-    WastInvoke,
-    WastRet,
-    Wat,
-};
+use wast::{lexer::Lexer, parser::ParseBuffer, Wast, WastDirective};
 
 fn run_spec_test(testname: &str) {
     let path = "./tests/testsuite";
@@ -32,10 +19,7 @@ fn run_spec_test(testname: &str) {
     let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
         Ok(buffer) => buffer,
         Err(error) => {
-            panic!(
-                "failed to create ParseBuffer : {}",
-                error
-            )
+            panic!("failed to create ParseBuffer : {}", error)
         }
     };
     let wast = match wast::parser::parse::<Wast>(&parse_buffer) {
@@ -43,8 +27,7 @@ fn run_spec_test(testname: &str) {
         Err(error) => {
             panic!(
                 "failed to parse `.wast` spec test file {} for: {}",
-                testname,
-                error
+                testname, error
             )
         }
     };
@@ -64,18 +47,28 @@ fn run_spec_test(testname: &str) {
                 };
                 compile_wasm(&wasm, &args).expect("failed to Wasker compile");
             }
-            WastDirective::AssertReturn { span:_, exec:_, results:_ } => {
-            }
-            WastDirective::AssertInvalid { span:_, module:_, message:_ } => {
-            }
-            WastDirective::AssertTrap { span:_, exec:_, message:_ } => {
-            }
-            WastDirective::AssertMalformed { span:_, module:_, message:_ } => {
-            }
-            WastDirective::Invoke(_invoke) => {
-            }
-            _other => {
-            }
+            WastDirective::AssertReturn {
+                span: _,
+                exec: _,
+                results: _,
+            } => {}
+            WastDirective::AssertInvalid {
+                span: _,
+                module: _,
+                message: _,
+            } => {}
+            WastDirective::AssertTrap {
+                span: _,
+                exec: _,
+                message: _,
+            } => {}
+            WastDirective::AssertMalformed {
+                span: _,
+                module: _,
+                message: _,
+            } => {}
+            WastDirective::Invoke(_invoke) => {}
+            _other => {}
         }
     }
 }
