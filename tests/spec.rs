@@ -1,50 +1,86 @@
 use std::io::Read;
 
 use std::{fs::File, io::Write};
-use wabt::script::{Command, CommandKind, ScriptParser};
-use wasker::compiler;
+use wasker::compiler::{self, compile_wasm};
+use wast::{
+    core::{HeapType, NanPattern, WastRetCore},
+    lexer::Lexer,
+    parser::ParseBuffer,
+    token::Span,
+    QuoteWat,
+    Wast,
+    WastDirective,
+    WastExecute,
+    WastInvoke,
+    WastRet,
+    Wat,
+};
 
-fn _run_spec_test(testname: &str) {
-    let path = "./tests/spec/test/core";
+fn run_spec_test(testname: &str) {
+    let path = "./tests/testsuite";
 
-    // read wast
+    // Read Wast
     let mut wat = String::new();
     let wat_path = std::path::Path::new(path).join(format!("{}.wast", testname));
     println!("open file: {:?}", wat_path);
     let mut file = std::fs::File::open(wat_path).expect("error open file");
     file.read_to_string(&mut wat).expect("cannot read file");
 
-    // parse
-    let mut parser = ScriptParser::<f32, f64>::from_str(&wat).expect("error get parser");
-    while let Some(Command { kind, .. }) = parser.next().expect("cannot parse next") {
-        match kind {
-            CommandKind::Module { module, name } => {
-                // Convert the module into the binary representation and check the magic number.
-                let module_binary = module.into_vec();
-                assert_eq!(&module_binary[0..4], &[0, 97, 115, 109]);
+    // Parse Wast
+    let mut lexer = Lexer::new(&wat);
+    lexer.allow_confusing_unicode(true);
+    let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
+        Ok(buffer) => buffer,
+        Err(error) => {
+            panic!(
+                "failed to create ParseBuffer : {}",
+                error
+            )
+        }
+    };
+    let wast = match wast::parser::parse::<Wast>(&parse_buffer) {
+        Ok(wast) => wast,
+        Err(error) => {
+            panic!(
+                "failed to parse `.wast` spec test file {} for: {}",
+                testname,
+                error
+            )
+        }
+    };
 
-                // Output wasm for debug
-                let mut file = File::create("tmp.wasm").expect("cannot open file");
-                file.write_all(&module_binary)
-                    .expect("fail to write binary");
-                file.flush().expect("fail to flush");
+    // Execute
+    for directive in wast.directives {
+        match directive {
+            WastDirective::Wat(mut wat) => {
+                // Get Wasm binary
+                let wasm = wat.encode().expect("failed to encode wat");
+                assert_eq!(wasm[0..4], [0, 97, 115, 109]);
 
-                // Compile test
-                println!("Compile Module {:?}", name);
+                // Compile with Wasker
                 let args = compiler::Args {
-                    input_file: "tmp.wasm".into(),
+                    input_file: "dummy.wasm".into(),
                     output_file: "/tmp/wasm.o".into(),
                 };
-                compiler::compile_wasm(&module_binary, &args).expect("compile failed");
+                compile_wasm(&wasm, &args).expect("failed to Wasker compile");
             }
-            _ => {
-                // TODO: support assertion
+            WastDirective::AssertReturn { span:_, exec:_, results:_ } => {
+            }
+            WastDirective::AssertInvalid { span:_, module:_, message:_ } => {
+            }
+            WastDirective::AssertTrap { span:_, exec:_, message:_ } => {
+            }
+            WastDirective::AssertMalformed { span:_, module:_, message:_ } => {
+            }
+            WastDirective::Invoke(_invoke) => {
+            }
+            _other => {
             }
         }
     }
 }
 
-macro_rules! _spec_test {
+macro_rules! spec_test {
     ($testname:ident, $fname:expr) => {
         #[test]
         #[allow(non_snake_case)]
@@ -53,6 +89,8 @@ macro_rules! _spec_test {
         }
     };
 }
+
+spec_test!(i64, "i64");
 
 /*
 spec_test!(address, "address");
@@ -86,7 +124,6 @@ spec_test!(float_misc, "float_misc");
 spec_test!(forward, "forward");
 spec_test!(func_ptrs, "func_ptrs");
 spec_test!(i32, "i32");
-spec_test!(i64, "i64");
 spec_test!(r#if, "if");
 spec_test!(inline_module, "inline-module");
 spec_test!(int_exprs, "int_exprs");
