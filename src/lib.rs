@@ -6,3 +6,4 @@ pub mod environment;
 pub mod inkwell;
 pub mod insts;
 pub mod section;
+pub mod wasi_wrapper;
