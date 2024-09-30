@@ -1,5 +1,5 @@
-use wasi::{Errno, ERRNO_SUCCESS};
 use std::sync::Mutex;
+use wasi::{Errno, ERRNO_SUCCESS};
 
 const LINEAR_MEMORY_BLOCK_SIZE: i32 = 64 * 1024;
 const LINEAR_MEMORY_BLOCK_NUM_MAX: i32 = 32;

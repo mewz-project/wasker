@@ -1,5 +1,3 @@
-mod wasker::wasi_wrapper;
-
 extern "C" {
     fn wasker_main();
 }

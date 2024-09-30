@@ -3,18 +3,29 @@
 use crate::environment::Environment;
 use crate::inkwell::init_inkwell;
 use crate::section::translate_module;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context, Ok, Result};
 use clap::Parser;
 use inkwell::{context, module::Module, passes::PassManager, targets};
-use std::path;
+use std::io::Read;
+use std::path::PathBuf;
+use wast::{lexer::Lexer, parser::ParseBuffer, Wast, WastDirective};
 use wat;
 
+/// Ahead-of-Time Wasm to ELF compiler.
 #[derive(Parser, Debug)]
 pub struct Args {
-    pub input_file: path::PathBuf,
+    /// Path to the input Wasm or WAT file.
+    #[arg(short, long, default_value = "./hello.wat")]
+    pub input_file: PathBuf,
 
+    /// Path to the output ELF file.
     #[arg(short, long, default_value = "./wasm.o")]
-    pub output_file: path::PathBuf,
+    pub output_file: PathBuf,
+
+    /// SpecTest mode
+    /// If this flag is set, the compiler will output ELF file from spectest's *.wast file.
+    #[arg(short, long, default_value = "false")]
+    pub spectest: bool,
 }
 
 /// Receive a path to a Wasm binary or WAT and compile it into ELF binary.
@@ -29,6 +40,117 @@ pub fn compile_wasm_from_file(args: &Args) -> Result<()> {
     assert!(wasm.starts_with(b"\0asm"));
 
     compile_wasm(&wasm, args)
+}
+
+fn compile_spec_test(testname: &str) {
+    let project_root = std::env::var("CARGO_MANIFEST_DIR").expect("error get env");
+
+    // Read Wast
+    let mut wat = String::new();
+    let wat_path = std::path::Path::new(&project_root).join(format!("testsuite/{}.wast", testname));
+    log::info!("open file: {:?}", wat_path);
+    let mut file = std::fs::File::open(wat_path).expect("error open file");
+    file.read_to_string(&mut wat).expect("cannot read file");
+
+    // Parse Wast
+    let mut lexer = Lexer::new(&wat);
+    lexer.allow_confusing_unicode(true);
+    let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
+        core::result::Result::Ok(buffer) => buffer,
+        Err(error) => {
+            panic!("failed to create ParseBuffer : {}", error)
+        }
+    };
+    let wast = match wast::parser::parse::<Wast>(&parse_buffer) {
+        core::result::Result::Ok(wast) => wast,
+        Err(error) => {
+            panic!(
+                "failed to parse `.wast` spec test file {} for: {}",
+                testname, error
+            )
+        }
+    };
+
+    // Compile Wast
+    let target_dir = std::path::Path::new(&project_root).join(format!("target/spectest"));
+    if !target_dir.exists() {
+        std::fs::create_dir_all(&target_dir).expect("error create target dir");
+    }
+
+    let buff_externc = "#[link(name = \"spectest\")]\n";
+    let buff_test = "#[test]
+fn test_dummy2() {
+    assert_eq!(1, 1);
+}\n";
+
+    for directive in wast.directives {
+        match directive {
+            WastDirective::Wat(mut wat) => {
+                // Get Wasm binary
+                let wasm = wat.encode().expect("failed to encode wat");
+                assert_eq!(wasm[0..4], [0, 97, 115, 109]);
+
+                // Compile with Wasker
+                let args = Args {
+                    input_file: "dummy.wasm".into(),
+                    output_file: format!("{}/{}.o", target_dir.display(), testname).into(),
+                    spectest: false,
+                };
+                compile_wasm(&wasm, &args).expect("failed to Wasker compile");
+            }
+            WastDirective::AssertReturn {
+                span: _,
+                exec,
+                results: _,
+            } => {
+                match exec {
+                    wast::WastExecute::Invoke(wast::WastInvoke {
+                        span: _,
+                        module: _,
+                        name: _,
+                        args: _,
+                    }) => {
+                        //println!("Invoke {:?}", name);
+                        //println!("\targs: {:?}", args);
+                    }
+
+                    _ => {}
+                }
+            }
+            WastDirective::AssertInvalid {
+                span: _,
+                module: _,
+                message: _,
+            } => {}
+            WastDirective::AssertTrap {
+                span: _,
+                exec: _,
+                message: _,
+            } => {}
+            WastDirective::AssertMalformed {
+                span: _,
+                module: _,
+                message: _,
+            } => {}
+            _other => {}
+        }
+    }
+
+    let buff = format!("{}{}", buff_externc, buff_test);
+    let rs_path = target_dir.join(format!("{}/target/spectest/spectest.rs", project_root));
+    if rs_path.exists() {
+        std::fs::remove_file(&rs_path).expect("error remove file");
+    }
+    std::fs::write(rs_path, buff).expect("error write file");
+}
+
+pub const SPECTESTS: [&str; 2] = ["i32", "i64"];
+
+pub fn compile_wast_from_spectest() -> Result<()> {
+    for testname in SPECTESTS.iter() {
+        compile_spec_test(testname);
+    }
+    Ok(())
 }
 
 /// Receive a Wasm binary and compile it into ELF binary.
@@ -88,7 +210,7 @@ pub fn compile_wasm(wasm: &[u8], args: &Args) -> Result<()> {
 }
 
 fn output_elf(environment: Environment) -> Result<()> {
-    let obj_path = path::Path::new(environment.output_file);
+    let obj_path = PathBuf::from(environment.output_file);
     let ll_path = obj_path.with_extension("ll");
 
     log::info!("write to {}", ll_path.display());
