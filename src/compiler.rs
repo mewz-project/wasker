@@ -6,9 +6,12 @@ use crate::section::translate_module;
 use anyhow::{anyhow, Context, Ok, Result};
 use clap::Parser;
 use inkwell::{context, module::Module, passes::PassManager, targets};
-use std::io::Read;
+use std::fmt::format;
+use std::io::{Read, Write};
 use std::path::PathBuf;
-use wast::{lexer::Lexer, parser::ParseBuffer, Wast, WastDirective};
+use wast::{
+    core::WastArgCore, core::WastRetCore, lexer::Lexer, parser::ParseBuffer, Wast, WastDirective,
+};
 use wat;
 
 /// Ahead-of-Time Wasm to ELF compiler.
@@ -42,7 +45,7 @@ pub fn compile_wasm_from_file(args: &Args) -> Result<()> {
     compile_wasm(&wasm, args)
 }
 
-fn compile_spec_test(testname: &str) {
+fn compile_spec_test(testname: &str, idx: usize) {
     let project_root = std::env::var("CARGO_MANIFEST_DIR").expect("error get env");
 
     // Read Wast
@@ -77,11 +80,13 @@ fn compile_spec_test(testname: &str) {
         std::fs::create_dir_all(&target_dir).expect("error create target dir");
     }
 
-    let buff_externc = "#[link(name = \"spectest\")]\n";
-    let buff_test = "#[test]
-fn test_dummy2() {
-    assert_eq!(1, 1);
-}\n";
+    let mut buff_externc = if idx == 0 {
+        String::from("#[link(name = \"spectest\")]\nextern \"C\" {\n")
+    } else {
+        String::new()
+    };
+    let mut buff_test = String::from(format!("#[test]\nfn test_{}()", testname));
+    buff_test.push_str("{\n");
 
     for directive in wast.directives {
         match directive {
@@ -101,22 +106,69 @@ fn test_dummy2() {
             WastDirective::AssertReturn {
                 span: _,
                 exec,
-                results: _,
-            } => {
-                match exec {
-                    wast::WastExecute::Invoke(wast::WastInvoke {
-                        span: _,
-                        module: _,
-                        name: _,
-                        args: _,
-                    }) => {
-                        //println!("Invoke {:?}", name);
-                        //println!("\targs: {:?}", args);
+                results,
+            } => match exec {
+                wast::WastExecute::Invoke(wast::WastInvoke {
+                    span: _,
+                    module: _,
+                    name,
+                    args,
+                }) => {
+                    let mut test_strings = String::from("\tassert_eq!(");
+                    if results.len() > 1 {
+                        log::error!("TODO: results.len() > 1");
+                        assert!(false);
                     }
-
-                    _ => {}
+                    match &results[0] {
+                        wast::WastRet::Core(ret) => match ret {
+                            WastRetCore::I32(i) => {
+                                test_strings.push_str(&format!("{},", i));
+                            }
+                            WastRetCore::I64(i) => {
+                                test_strings.push_str(&format!("{},", i));
+                            }
+                            WastRetCore::F32(f) => {
+                                test_strings.push_str(&format!("{:?},", f));
+                            }
+                            WastRetCore::F64(f) => {
+                                test_strings.push_str(&format!("{:?},", f));
+                            }
+                            _ => {}
+                        },
+                        _ => {
+                            log::error!("TODO: results[0] is not Core");
+                            assert!(false);
+                        }
+                    }
+                    test_strings.push_str(format!("{}(", name).as_str());
+                    for arg in args {
+                        match arg {
+                            wast::WastArg::Core(argcore) => match argcore {
+                                WastArgCore::I32(i) => {
+                                    test_strings.push_str(&format!("{},", i));
+                                }
+                                WastArgCore::I64(i) => {
+                                    test_strings.push_str(&format!("{},", i));
+                                }
+                                WastArgCore::F32(f) => {
+                                    test_strings.push_str(&format!("{:?},", f));
+                                }
+                                WastArgCore::F64(f) => {
+                                    test_strings.push_str(&format!("{:?},", f));
+                                }
+                                _ => {}
+                            },
+                            _ => {}
+                        }
+                    }
+                    // remove last comma
+                    test_strings.pop();
+                    test_strings.push_str("));\n");
+                    buff_test.push_str(test_strings.as_str());
                 }
-            }
+
+                _ => {}
+            },
             WastDirective::AssertInvalid {
                 span: _,
                 module: _,
@@ -136,19 +188,36 @@ fn test_dummy2() {
         }
     }
 
-    let buff = format!("{}{}", buff_externc, buff_test);
+    buff_externc.push_str("\n}\n");
+    buff_test.push_str("}\n");
     let rs_path = target_dir.join(format!("{}/target/spectest/spectest.rs", project_root));
-    if rs_path.exists() {
-        std::fs::remove_file(&rs_path).expect("error remove file");
+
+    if idx == 0 {
+        // remove file if exists
+        if rs_path.exists() {
+            std::fs::remove_file(&rs_path).expect("error remove file");
+        }
+
+        // write to new file
+        let buff = format!("{}{}", buff_externc, buff_test);
+        std::fs::write(&rs_path, &buff).expect("error write file");
+    } else {
+        let f = std::fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(&rs_path)
+            .expect("error open file");
+        let mut bw = std::io::BufWriter::new(f);
+        bw.write_all(buff_test.as_bytes())
+            .expect("error write file");
     }
-    std::fs::write(rs_path, buff).expect("error write file");
 }
 
 pub const SPECTESTS: [&str; 2] = ["i32", "i64"];
 
 pub fn compile_wast_from_spectest() -> Result<()> {
-    for testname in SPECTESTS.iter() {
-        compile_spec_test(testname);
+    for (i, testname) in SPECTESTS.iter().enumerate() {
+        compile_spec_test(testname, i);
     }
     Ok(())
 }
