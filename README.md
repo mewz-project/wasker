@@ -42,7 +42,7 @@ rustup target add wasm32-wasi
 cargo build --target wasm32-wasi
 ```
 ### example2
-We also provide a pre-build simple Wasm binary.
+We also provide a pre-built simple Wasm binary.
 ```
 git clone https://github.com/mewz-project/wasker.git
 ls helloworld.wat
