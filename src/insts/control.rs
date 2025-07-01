@@ -354,7 +354,7 @@ pub(super) fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTa
     let values = environment.peekn(phis.len()).expect("fail stack peekn");
     for (i, phi) in phis.iter().enumerate().rev() {
         let value = values[i];
-        log::debug!("- add_incoming to {:?}", phi);
+        log::debug!("- add_incoming to {phi:?}");
         phi.add_incoming(&[(&value, current_block)]);
     }
 
@@ -378,7 +378,7 @@ pub(super) fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTa
         for (i, phi) in phis.iter().enumerate().rev() {
             let value = values[i];
             phi.add_incoming(&[(&value, current_block)]);
-            log::debug!("- add_incoming to {:?}", phi);
+            log::debug!("- add_incoming to {phi:?}");
         }
     }
     // switch

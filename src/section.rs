@@ -87,14 +87,11 @@ pub fn translate_module(mut data: &[u8], environment: &mut Environment<'_, '_>) 
                 break;
             }
             Payload::Version { num, encoding, .. } => {
-                log::debug!("version:{}, encoding: {:?}", num, encoding);
+                log::debug!("version:{num}, encoding: {encoding:?}");
             }
             Payload::CodeSectionStart { count, range, size } => {
                 log::debug!(
-                    "CodeSectionStart: count:{}, range:{:?}, size:{}",
-                    count,
-                    range,
-                    size
+                    "CodeSectionStart: count:{count}, range:{range:?}, size:{size}",
                 );
                 parser.skip_section();
                 data = &data[size as usize..];
@@ -310,7 +307,7 @@ fn parse_type_section(
     environment: &mut Environment<'_, '_>,
 ) -> Result<()> {
     for entry in types {
-        log::debug!("Type Section: {:?}", entry);
+        log::debug!("Type Section: {entry:?}");
         if let anyhow::Result::Ok(wasmparser::Type::Func(functype)) = entry {
             let params = functype.params();
             let returns = functype.results();
@@ -392,7 +389,7 @@ fn parse_memory_section(
     for (i, memory) in memories.into_iter().enumerate() {
         let memory = memory?;
         size += memory.initial as u32;
-        log::debug!("- memory[{}] = {:?}", i, memory);
+        log::debug!("- memory[{i}] = {memory:?}");
     }
     let global = environment.module.add_global(
         environment.inkwell_types.i32_type,
@@ -506,7 +503,7 @@ fn parse_export_section(
 ) -> Result<()> {
     //let mut register_done_idx = environment.import_section_size;
     for export in exports {
-        log::debug!("ExportSection {:?}", export);
+        log::debug!("ExportSection {export:?}");
         let export = export?;
         match export.kind {
             wasmparser::ExternalKind::Func => {
@@ -537,7 +534,7 @@ fn parse_element_section(
                 table_index,
                 offset_expr,
             } => {
-                log::debug!("table[{}]", table_index);
+                log::debug!("table[{table_index}]");
                 // TODO: support multiple tables
                 assert_eq!(table_index, 0);
 
@@ -626,7 +623,7 @@ fn parse_data_section(
             } => {
                 // Make array from data
                 let size = data.data.len();
-                log::debug!("- data size = {}", size);
+                log::debug!("- data size = {size}");
                 let array_ty = environment.inkwell_types.i8_type.array_type(size as u32);
                 let global_mem_initializer = environment.module.add_global(
                     array_ty,
@@ -659,7 +656,7 @@ fn parse_data_section(
                     Operator::I32Const { value } => value,
                     _other => unreachable!("unsupported offset type"),
                 };
-                log::debug!("- offset = 0x{:x}", offset);
+                log::debug!("- offset = 0x{offset:x}");
                 let offset_int = environment
                     .inkwell_types
                     .i64_type
@@ -759,7 +756,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
     let ret = current_fn.get_type().get_return_type();
     let mut end_phis: Vec<PhiValue> = Vec::new();
     if let Some(v) = ret {
-        log::debug!("- return type {:?}", v);
+        log::debug!("- return type {v:?}");
         let phi = environment.builder.build_phi(v, "return_phi");
         end_phis.push(phi);
     }
@@ -808,7 +805,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
             Err(e) => return Err(e.into()),
         };
 
-        log::debug!("CodeSection: op[{}] = {:?}", num_op, op);
+        log::debug!("CodeSection: op[{num_op}] = {op:?}");
         num_op += 1;
 
         parse_instruction(environment, &op, &current_fn, &locals)?;
