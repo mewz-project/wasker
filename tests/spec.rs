@@ -9,8 +9,8 @@ fn _run_spec_test(testname: &str) {
 
     // read wast
     let mut wat = String::new();
-    let wat_path = std::path::Path::new(path).join(format!("{}.wast", testname));
-    println!("open file: {:?}", wat_path);
+    let wat_path = std::path::Path::new(path).join(format!("{testname}.wast"));
+    println!("open file: {wat_path:?}");
     let mut file = std::fs::File::open(wat_path).expect("error open file");
     file.read_to_string(&mut wat).expect("cannot read file");
 
@@ -30,7 +30,7 @@ fn _run_spec_test(testname: &str) {
                 file.flush().expect("fail to flush");
 
                 // Compile test
-                println!("Compile Module {:?}", name);
+                println!("Compile Module {name:?}");
                 let args = compiler::Args {
                     input_file: "tmp.wasm".into(),
                     output_file: "/tmp/wasm.o".into(),

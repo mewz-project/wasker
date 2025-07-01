@@ -115,11 +115,11 @@ fn get_host_target_machine() -> Result<targets::TargetMachine, String> {
     use targets::*;
 
     Target::initialize_native(&InitializationConfig::default())
-        .map_err(|e| format!("failed to initialize native target: {}", e))?;
+        .map_err(|e| format!("failed to initialize native target: {e}"))?;
 
     let triple = TargetMachine::get_default_triple();
     let target =
-        Target::from_triple(&triple).map_err(|e| format!("failed to get target: {}", e))?;
+        Target::from_triple(&triple).map_err(|e| format!("failed to get target: {e}"))?;
 
     let cpu = TargetMachine::get_host_cpu_name();
     let features = TargetMachine::get_host_cpu_features();

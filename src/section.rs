@@ -438,7 +438,7 @@ fn parse_global_section(
     // These functions will be registerd in ExportSection
     for (i, global) in globals.into_iter().enumerate() {
         let global = global?;
-        let gname = format!("global_{}", i);
+        let gname = format!("global_{i}");
         let ty = wasmparser_to_inkwell(&global.ty.content_type, &environment.inkwell_types)?;
 
         // Get initial value
