@@ -1291,7 +1291,7 @@ pub(super) fn parse_instruction<'a>(
                 .context("error gen GeU")?;
         }
         _other => {
-            log::error!("Unimplemented Inst {:?}", op);
+            log::error!("Unimplemented Inst {op:?}");
             unreachable!("- unimplemented inst {:?}", op);
         }
     }
