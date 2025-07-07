@@ -90,9 +90,7 @@ pub fn translate_module(mut data: &[u8], environment: &mut Environment<'_, '_>) 
                 log::debug!("version:{num}, encoding: {encoding:?}");
             }
             Payload::CodeSectionStart { count, range, size } => {
-                log::debug!(
-                    "CodeSectionStart: count:{count}, range:{range:?}, size:{size}",
-                );
+                log::debug!("CodeSectionStart: count:{count}, range:{range:?}, size:{size}",);
                 parser.skip_section();
                 data = &data[size as usize..];
             }
