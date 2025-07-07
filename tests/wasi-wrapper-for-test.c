@@ -9,64 +9,6 @@ const int LINEAR_MEMORY_BLOCK_SIZE = 64 * 1024;
 const int LINEAR_MEMORY_BLOCK_NUM_MAX = 32;
 
 //////////////////////////////////////////////
-/// Wrapper of following WASI functions
-/// - fd_write
-/// - environ_get
-/// - environ_sizes_get
-/// - proc_exit
-//////////////////////////////////////////////
-
-typedef struct
-{
-  int iov_base;
-  int iov_len;
-} IoVec;
-
-typedef enum
-{
-  SUCCESS,
-  // Add other error types here
-} WasiError;
-
-WasiError fd_write(int fd, int buf_iovec_addr, int vec_len, int size_addr)
-{
-  char *iovec_ptr = (char *)(linear_memory_base + buf_iovec_addr);
-  IoVec *iovec = (IoVec *)iovec_ptr;
-
-  int len = 0;
-  for (int i = 0; i < vec_len; i++)
-  {
-    char *buf_ptr = (char *)(linear_memory_base + iovec[i].iov_base);
-    size_t buf_len = iovec[i].iov_len;
-    for (int j = 0; j < buf_len; j++)
-    {
-      printf("%c", buf_ptr[j]);
-    }
-    len += buf_len;
-  }
-  int *size_ptr = (int *)(linear_memory_base + size_addr);
-  *size_ptr = len;
-  return SUCCESS;
-}
-
-WasiError environ_get(int env_addrs, int env_buf_addr)
-{
-  // TODO: implement
-  return SUCCESS;
-}
-
-WasiError environ_sizes_get(int env_count_addr, int env_buf_size_addr)
-{
-  // TODO: implement
-  return SUCCESS;
-}
-
-void proc_exit(int code)
-{
-  exit(code);
-}
-
-//////////////////////////////////////////////
 /// Provide linear memory with Wasm
 //////////////////////////////////////////////
 
