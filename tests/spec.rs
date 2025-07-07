@@ -2,7 +2,9 @@ use std::process::Command;
 use wasker::compiler;
 
 fn ensure_log_dir(log_dir: &str) {
-    std::fs::create_dir_all(log_dir).expect("Failed to create log directory");
+    if !std::path::Path::new(log_dir).exists() {
+        std::fs::create_dir_all(log_dir).expect("Failed to create log directory");
+    }
 }
 
 fn compile_for_executable(output_path: &str, wasm_path: &str, wasi_wrapper_path: &str) {
@@ -46,15 +48,16 @@ fn run_test(testcase: &str) {
     let n_success = stdout.matches("Pass").count();
     let n_fail = stdout.matches("Fail").count();
     assert!(
-        n_success > 0,
-        "Test failed with output: {}",
+        n_fail == 0,
+        "{} tests failed with output: {}", n_fail,
         String::from_utf8_lossy(&output.stdout)
     );
     assert!(
-        n_fail == 0,
-        "Test failed with output: {}",
+        n_success > 0,
+        "No tests successed: {}",
         String::from_utf8_lossy(&output.stdout)
     );
+    
 }
 
 #[test]
