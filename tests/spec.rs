@@ -23,8 +23,8 @@ fn run_test(testcase: &str) {
     ensure_log_dir(&log_dir);
 
     let wat_path = format!("{project_root}/tests/wat/{testcase}.wat");
-    let wasker_output_path = format!("{log_dir}/wasm.o");
-    let executable_path = format!("{log_dir}/exec.out");
+    let wasker_output_path = format!("{log_dir}/{testcase}.o");
+    let executable_path = format!("{log_dir}/test_{testcase}.out");
     let wasi_wrapper_path = format!("{project_root}/tests/wasi-wrapper-for-test.c");
 
     let args = compiler::Args {
