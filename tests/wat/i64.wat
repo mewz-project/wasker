@@ -150,7 +150,7 @@
     (call $assert_test_i64 (call $rem_s (i64.const 0) (i64.const 1)) (i64.const 0))
     (call $assert_test_i64 (call $rem_s (i64.const 0) (i64.const -1)) (i64.const 0))
     (call $assert_test_i64 (call $rem_s (i64.const -1) (i64.const -1)) (i64.const 0))
-    (call $assert_test_i64 (call $rem_s (i64.const 0x8000000000000000) (i64.const -1)) (i64.const 0)) ;; interrupt
+    (call $assert_test_i64 (call $rem_s (i64.const 0x8000000000000000) (i64.const -1)) (i64.const 0))
     (call $assert_test_i64 (call $rem_s (i64.const 0x8000000000000000) (i64.const 2)) (i64.const 0))
     (call $assert_test_i64 (call $rem_s (i64.const 0x8000000000000001) (i64.const 1000)) (i64.const -807))
     (call $assert_test_i64 (call $rem_s (i64.const 5) (i64.const 2)) (i64.const 1))
@@ -449,19 +449,19 @@
     (call $assert_test_i32 (call $ge_u (i64.const 0x7fffffffffffffff) (i64.const 0x8000000000000000)) (i32.const 0))
 
     (call $assert_test_i64 (call $ctz (i64.const -1)) (i64.const 0))
-    (call $assert_test_i64 (call $ctz (i64.const 0)) (i64.const 64));; Fail
+    (call $assert_test_i64 (call $ctz (i64.const 0)) (i64.const 64))
     (call $assert_test_i64 (call $ctz (i64.const 0x00008000)) (i64.const 15))
     (call $assert_test_i64 (call $ctz (i64.const 0x00010000)) (i64.const 16))
     (call $assert_test_i64 (call $ctz (i64.const 0x8000000000000000)) (i64.const 63))
     (call $assert_test_i64 (call $ctz (i64.const 0x7fffffffffffffff)) (i64.const 0)) 
-    ;; (call $assert_test_i64 (call $clz (i64.const 0xffffffffffffffff)) (i64.const 0)) ;; 0x3f
-    ;; (call $assert_test_i64 (call $clz (i64.const 0)) (i64.const 64)) ;;0x0 ;; Fail
-    ;; (call $assert_test_i64 (call $clz (i64.const 0x00008000)) (i64.const 48)) ;; 0xf
-    ;; (call $assert_test_i64 (call $clz (i64.const 0xff)) (i64.const 56)) ;;0x7
-    ;; (call $assert_test_i64 (call $clz (i64.const 0x8000000000000000)) (i64.const 0)) ;; 0x3f
-    ;; (call $assert_test_i64 (call $clz (i64.const 1)) (i64.const 63));; 0x0
-    ;; (call $assert_test_i64 (call $clz (i64.const 2)) (i64.const 62));; 0x1
-    ;; (call $assert_test_i64 (call $clz (i64.const 0x7fffffffffffffff)) (i64.const 1));; 0x3e
+    (call $assert_test_i64 (call $clz (i64.const 0xffffffffffffffff)) (i64.const 0))
+    (call $assert_test_i64 (call $clz (i64.const 0)) (i64.const 64))
+    (call $assert_test_i64 (call $clz (i64.const 0x00008000)) (i64.const 48))
+    (call $assert_test_i64 (call $clz (i64.const 0xff)) (i64.const 56))
+    (call $assert_test_i64 (call $clz (i64.const 0x8000000000000000)) (i64.const 0))
+    (call $assert_test_i64 (call $clz (i64.const 1)) (i64.const 63))
+    (call $assert_test_i64 (call $clz (i64.const 2)) (i64.const 62))
+    (call $assert_test_i64 (call $clz (i64.const 0x7fffffffffffffff)) (i64.const 1))
 
    ;; (call $assert_test_i64 (call $popcnt (i64.const -1)) (i64.const 64))
    ;; (call $assert_test_i64 (call $popcnt (i64.const 0xbeafbeaf)) (i64.const 0))

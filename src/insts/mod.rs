@@ -173,26 +173,15 @@ pub(super) fn parse_instruction<'a>(
         }
         Operator::I64Clz => {
             let v1 = environment.stack.pop().expect("stack empty");
-            let function = environment.inkwell_insts.ctlz_i64;
-            let clz = environment
-                .builder
-                .build_call(
-                    function,
-                    &[
-                        v1.into(),
-                        environment.inkwell_types.i1_type.const_zero().into(),
-                    ],
-                    "",
-                )
-                .try_as_basic_value()
-                .left()
-                .expect("fail build_call llvm_insts");
-            let res = environment.builder.build_int_sub(
-                environment.inkwell_types.i64_type.const_int(63, false),
-                clz.into_int_value(),
-                "",
-            );
-            environment.stack.push(res.as_basic_value_enum());
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.ctlz_i64,
+                &[
+                    v1.into(),
+                    environment.inkwell_types.i1_type.const_zero().into(),
+                ],
+            )
+            .context("error gen I64Clz")?;
         }
         Operator::I32Ctz => {
             let v1 = environment.stack.pop().expect("stack empty");
