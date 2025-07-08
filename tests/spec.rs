@@ -49,7 +49,8 @@ fn run_test(testcase: &str) {
     let n_fail = stdout.matches("Fail").count();
     assert!(
         n_fail == 0,
-        "{} tests failed with output: {}", n_fail,
+        "{} tests failed with output: {}",
+        n_fail,
         String::from_utf8_lossy(&output.stdout)
     );
     assert!(
@@ -57,7 +58,6 @@ fn run_test(testcase: &str) {
         "No tests successed: {}",
         String::from_utf8_lossy(&output.stdout)
     );
-    
 }
 
 #[test]

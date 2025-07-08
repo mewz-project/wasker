@@ -173,26 +173,15 @@ pub(super) fn parse_instruction<'a>(
         }
         Operator::I64Clz => {
             let v1 = environment.stack.pop().expect("stack empty");
-            let function = environment.inkwell_insts.ctlz_i64;
-            let clz = environment
-                .builder
-                .build_call(
-                    function,
-                    &[
-                        v1.into(),
-                        environment.inkwell_types.i1_type.const_zero().into(),
-                    ],
-                    "",
-                )
-                .try_as_basic_value()
-                .left()
-                .expect("fail build_call llvm_insts");
-            let res = environment.builder.build_int_sub(
-                environment.inkwell_types.i64_type.const_int(63, false),
-                clz.into_int_value(),
-                "",
-            );
-            environment.stack.push(res.as_basic_value_enum());
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.ctlz_i64,
+                &[
+                    v1.into(),
+                    environment.inkwell_types.i1_type.const_zero().into(),
+                ],
+            )
+            .context("error gen I64Clz")?;
         }
         Operator::I32Ctz => {
             let v1 = environment.stack.pop().expect("stack empty");
@@ -281,8 +270,63 @@ pub(super) fn parse_instruction<'a>(
         /* % operator */
         Operator::I32RemS | Operator::I64RemS => {
             let (v1, v2) = environment.pop2();
-            let res = environment.builder.build_int_signed_rem(
+
+            // Since srem is implemented using sdiv in LLVM, we need to avoid
+            // Undefined Behavior of INT_MIN % -1
+            let (min_value, neg_one_value) = if matches!(op, Operator::I32RemS) {
+                let min = environment
+                    .inkwell_types
+                    .i32_type
+                    .const_int(i32::MIN as u64, false);
+                let neg_one = environment
+                    .inkwell_types
+                    .i32_type
+                    .const_int(u64::MAX, false);
+                (min, neg_one)
+            } else {
+                let min = environment
+                    .inkwell_types
+                    .i64_type
+                    .const_int(i64::MIN as u64, false);
+                let neg_one = environment
+                    .inkwell_types
+                    .i64_type
+                    .const_int(u64::MAX, false);
+                (min, neg_one)
+            };
+
+            // If the dividend is INT_MIN and the divisor is -1, we replace v1 with 0
+            // to avoid Undefined Behavior. i.e.
+            //  %overflow = (%v1 == min_value) && (%v2 == neg_one_value)
+            //  %v1_new = if %overflow then 0 else %v1
+            //  %res = srem %v1_new, %v2
+            let overflow = environment.builder.build_and(
+                environment.builder.build_int_compare(
+                    inkwell::IntPredicate::EQ,
+                    v1.into_int_value(),
+                    min_value,
+                    "",
+                ),
+                environment.builder.build_int_compare(
+                    inkwell::IntPredicate::EQ,
+                    v2.into_int_value(),
+                    neg_one_value,
+                    "",
+                ),
+                "overflow",
+            );
+            let v1_new = environment.builder.build_select(
+                overflow,
+                if matches!(op, Operator::I32RemS) {
+                    environment.inkwell_types.i32_type.const_zero()
+                } else {
+                    environment.inkwell_types.i64_type.const_zero()
+                },
                 v1.into_int_value(),
+                "v1_new",
+            );
+            let res = environment.builder.build_int_signed_rem(
+                v1_new.into_int_value(),
                 v2.into_int_value(),
                 "",
             );
