@@ -64,3 +64,8 @@ fn run_test(testcase: &str) {
 fn spec_i64() {
     run_test("i64");
 }
+
+#[test]
+fn spec_i32() {
+    run_test("i32");
+}
