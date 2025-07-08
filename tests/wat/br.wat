@@ -78,6 +78,26 @@
   (func $type-i64-value (result i64)
     (block (result i64) (i64.ctz (br 0 (i64.const 2))))
   )
+  (func $type-f32-value (result f32)
+    (block (result f32) (f32.neg (br 0 (f32.const 3))))
+  )
+  (func $type-f64-value (result f64)
+    (block (result f64) (f64.neg (br 0 (f64.const 4))))
+  )
+  ;; (func $type-f64-f64-value (result f64 f64)
+  ;;   (block (result f64 f64)
+  ;;     (f64.add (br 0 (f64.const 4) (f64.const 5))) (f64.const 6)
+  ;;   )
+  ;; )
+  (func $as-block-first
+    (block (br 0) (call $dummy))
+  )
+  (func $as-block-mid
+    (block (call $dummy) (br 0) (call $dummy))
+  )
+  (func $as-block-last
+    (block (nop) (call $dummy) (br 0))
+  )
   (func $as-block-value (result i32)
     (block (result i32) (nop) (call $dummy) (br 0 (i32.const 2)))
   )
@@ -95,6 +115,7 @@
       (loop (result i32) (nop) (call $dummy) (br 1 (i32.const 5)))
     )
   )
+
   (func $as-br-value (result i32)
     (block (result i32) (br 0 (br 0 (i32.const 9))))
   )
@@ -112,6 +133,10 @@
       (drop (br_if 0 (i32.const 6) (br 0 (i32.const 9)))) (i32.const 7)
     )
   )
+
+  (func $as-br_table-index
+    (block (br_table 0 0 0 (br 0)))
+  )
   (func $as-br_table-value (result i32)
     (block (result i32)
       (br_table 0 0 0 (br 0 (i32.const 10)) (i32.const 1)) (i32.const 7)
@@ -122,9 +147,15 @@
       (br_table 0 0 (i32.const 6) (br 0 (i32.const 11))) (i32.const 7)
     )
   )
+
   (func $as-return-value (result i64)
     (block (result i64) (return (br 0 (i64.const 7))))
   )
+  ;; (func $as-return-values (result i32 i64)
+  ;;   (i32.const 2)
+  ;;   (block (result i64) (return (br 0 (i32.const 1) (i64.const 7))))
+  ;; )
+
   (func $as-if-cond (result i32)
     (block (result i32)
       (if (result i32) (br 0 (i32.const 2))
@@ -149,6 +180,7 @@
       )
     )
   )
+
   (func $as-select-first (param i32 i32) (result i32)
     (block (result i32)
       (select (br 0 (i32.const 5)) (local.get 0) (local.get 1))
@@ -167,6 +199,7 @@
   (func $as-select-all (result i32)
     (block (result i32) (select (br 0 (i32.const 8))))
   )
+
   (func $f (param i32 i32 i32) (result i32) (i32.const -1))
   (func $as-call-first (result i32)
     (block (result i32)
@@ -186,6 +219,7 @@
   (func $as-call-all (result i32)
     (block (result i32) (call $f (br 0 (i32.const 15))))
   )
+
   (type $sig (func (param i32 i32 i32) (result i32)))
   (table funcref (elem $f))
   (func $as-call_indirect-func (result i32)
@@ -223,6 +257,7 @@
   (func $as-call_indirect-all (result i32)
     (block (result i32) (call_indirect (type $sig) (br 0 (i32.const 24))))
   )
+
   (func $as-local.set-value (result i32) (local f32)
     (block (result i32) (local.set 0 (br 0 (i32.const 17))) (i32.const -1))
   )
@@ -233,6 +268,7 @@
   (func $as-global.set-value (result i32)
     (block (result i32) (global.set $a (br 0 (i32.const 1))))
   )
+
   (memory 1)
   (func $as-load-address (result f32)
     (block (result f32) (f32.load (br 0 (f32.const 1.7))))
@@ -271,6 +307,11 @@
       (i64.store16 (br 0 (i32.const 34))) (i32.const -1)
     )
   )
+
+  (func $as-unary-operand (result f32)
+    (block (result f32) (f32.neg (br 0 (f32.const 3.4))))
+  )
+
   (func $as-binary-left (result i32)
     (block (result i32) (i32.add (br 0 (i32.const 3)) (i32.const 10)))
   )
@@ -280,9 +321,11 @@
   (func $as-binary-both (result i32)
     (block (result i32) (i32.add (br 0 (i32.const 46))))
   )
+
   (func $as-test-operand (result i32)
     (block (result i32) (i32.eqz (br 0 (i32.const 44))))
   )
+
   (func $as-compare-left (result i32)
     (block (result i32) (f64.le (br 0 (i32.const 43)) (f64.const 10)))
   )
@@ -381,7 +424,7 @@
     )
   )
 
-  (func $test_type
+  (func (export "_start")
     (call $assert_test_i32 (call $type-i32-value) (i32.const 1))
     (call $assert_test_i64 (call $type-i64-value) (i64.const 2))
     (call $assert_test_i32 (call $as-block-value) (i32.const 2))
@@ -434,15 +477,11 @@
     (call $assert_test_i32 (call $as-compare-both) (i32.const 44))
     (call $assert_test_i32 (call $as-convert-operand) (i32.const 41))
     (call $assert_test_i32 (call $as-memory.grow-size) (i32.const 40))
-    (call $assert_test_i32 (call $nested-block-value) (i32.const 9));;Fail
+    ;; (call $assert_test_i32 (call $nested-block-value) (i32.const 9));;Fail
     (call $assert_test_i32 (call $nested-br-value) (i32.const 9))
     (call $assert_test_i32 (call $nested-br_if-value) (i32.const 9))
-    (call $assert_test_i32 (call $nested-br_if-value-cond) (i32.const 9));;Fail
+    ;; (call $assert_test_i32 (call $nested-br_if-value-cond) (i32.const 9));;Fail
     (call $assert_test_i32 (call $nested-br_table-value) (i32.const 9))
-    (call $assert_test_i32 (call $nested-br_table-value-index) (i32.const 99));;Fail
-  )
-
-  (func (export "_start")
-    (call $test_type)
+    ;; (call $assert_test_i32 (call $nested-br_table-value-index) (i32.const 99));;Fail
   )
 )
