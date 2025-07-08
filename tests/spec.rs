@@ -74,3 +74,8 @@ fn spec_i32() {
 fn spec_br() {
     run_test("br");
 }
+
+#[test]
+fn spec_block() {
+    run_test("block");
+}
