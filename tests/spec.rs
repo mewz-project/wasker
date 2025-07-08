@@ -69,3 +69,8 @@ fn spec_i64() {
 fn spec_i32() {
     run_test("i32");
 }
+
+#[test]
+fn spec_br() {
+    run_test("br");
+}
