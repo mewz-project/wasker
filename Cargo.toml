@@ -15,6 +15,6 @@ wat = "1.235.0"
 wasmparser = "0.102.0"
 clap = { version = "4.5.40", features = ["derive"]}
 log = "0.4.27"
-env_logger = "0.10.2"
+env_logger = "0.11.6"
 wabt = "0.10.0"
 pretty-hex = "0.4.1"
