@@ -64,6 +64,7 @@
     (block (result i32) (i32.const 7))
   )
 
+  ;; TODO: support multiple return values
   ;; (func $multi (result i32)
   ;;   (block (call $dummy) (call $dummy) (call $dummy) (call $dummy))
   ;;   (block (result i32)
@@ -249,7 +250,7 @@
       (block (result f32) (call $dummy) (f32.const 3))
     )
   )
-  ;; Skip because multiple return values are not supported
+  ;; TODO: support multiple return values
   ;; (func $as-binary-operands (result i32)
   ;;   (i32.mul
   ;;     (block (result i32 i32)
@@ -283,6 +284,7 @@
   (func $break-value (result i32)
     (block (result i32) (br 0 (i32.const 18)) (i32.const 19))
   )
+  ;; TODO: support multiple return values
   ;; (func $break-multi-value (result i32 i32 i64)
   ;;   (block (result i32 i32 i64)
   ;;     (br 0 (i32.const 18) (i32.const -18) (i64.const 18))
@@ -315,7 +317,7 @@
     (local.get 0)
   )
 
-  ;; Skip because block with parameters is not supported
+  ;; TODO: support block with parameters
   ;; (func $param (result i32)
   ;;   (i32.const 1)
   ;;   (block (param i32) (result i32)
@@ -374,7 +376,7 @@
   
   (func (export "_start")
     (call $assert_test_i32 (call $singular) (i32.const 7))
-    ;; Skip because multiple return values are not supported
+    ;; TODO: support multiple return values
     ;; (call $assert_test_i32 (call $multi) (i32.const 8))
     (call $assert_test_i32 (call $nested) (i32.const 9))
     (call $assert_test_i32 (call $deep) (i32.const 150))
@@ -415,7 +417,7 @@
     (call $assert_test_i32 (call $as-test-operand) (i32.const 0))
     (call $assert_test_i32 (call $as-compare-operand) (i32.const 0))
 
-    ;; Skip because multiple return values are not supported
+    ;; TODO: support multiple return values
     ;; (call $assert_test_i32 (call $as-binary-operands) (i32.const 12))
     ;; (call $assert_test_i32 (call $as-compare-operands) (i32.const 0))
     ;; (call $assert_test_i32 (call $as-mixed-operands) (i32.const 27))
@@ -423,7 +425,7 @@
     (call $assert_test_i32 (call $break-bare) (i32.const 19))
     (call $assert_test_i32 (call $break-value) (i32.const 18))
 
-    ;; Skip because multiple return values are not supported
+    ;; TODO: support multiple return values
     ;; (call $assert_test_i32 (call $break-multi-value)
     ;;   (i32.const 18) (i32.const -18) (i64.const 18)
     ;; )
@@ -431,7 +433,7 @@
     (call $assert_test_i32 (call $break-repeated) (i32.const 18))
     (call $assert_test_i32 (call $break-inner) (i32.const 0xf))
     
-    ;; Skip because block with parameters is not supported
+    ;; TODO: support multiple return values
     ;; (call $assert_test_i32 (call $param) (i32.const 3))
     ;; (call $assert_test_i32 (call $params) (i32.const 3))
     ;; (call $assert_test_i32 (call $params-id) (i32.const 3))
