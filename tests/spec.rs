@@ -81,6 +81,11 @@ fn spec_br_if() {
 }
 
 #[test]
+fn spec_br_table() {
+    run_test("br_table");
+}
+
+#[test]
 fn spec_block() {
     run_test("block");
 }
