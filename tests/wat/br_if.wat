@@ -57,13 +57,61 @@
       )
     )
   )
+  (func $assert_test_f32 (param $expected f32) (param $result f32)
+    local.get $expected
+    local.get $result
+    f32.eq
+    (if
+      (then
+        (call $printSuccess)
+      )
+      (else
+        (call $printFail)
+      )
+    )
+  )
+  (func $assert_test_f64 (param $expected f64) (param $result f64)
+    local.get $expected
+    local.get $result
+    f64.eq
+    (if
+      (then
+        (call $printSuccess)
+      )
+      (else
+        (call $printFail)
+      )
+    )
+  )
+
   (func $dummy)
+  (func $type-i32
+    (block (drop (i32.ctz (br_if 0 (i32.const 0) (i32.const 1)))))
+  )
+  (func $type-i64
+    (block (drop (i64.ctz (br_if 0 (i64.const 0) (i32.const 1)))))
+  )
+  (func $type-f32
+    (block (drop (f32.neg (br_if 0 (f32.const 0) (i32.const 1)))))
+  )
+  (func $type-f64
+    (block (drop (f64.neg (br_if 0 (f64.const 0) (i32.const 1)))))
+  )
+  
   (func $type-i32-value (result i32)
     (block (result i32) (i32.ctz (br_if 0 (i32.const 1) (i32.const 1))))
   )
   (func $type-i64-value (result i64)
     (block (result i64) (i64.ctz (br_if 0 (i64.const 2) (i32.const 1))))
   )
+  (func $type-f32-value (result f32)
+    (block (result f32) (f32.neg (br_if 0 (f32.const 3) (i32.const 1))))
+  )
+  (func $type-f64-value (result f64)
+    (block (result f64) (f64.neg (br_if 0 (f64.const 4) (i32.const 1))))
+  )
+  
+
   (func $as-block-first (param i32) (result i32)
     (block (br_if 0 (local.get 0)) (return (i32.const 2))) (i32.const 3)
   )
@@ -279,6 +327,9 @@
       (i32.store16 (i32.const 2) (br_if 0 (i32.const 33) (i32.const 1))) (i32.const -1)
     )
   )
+  (func $as-unary-operand (result f64)
+    (block (result f64) (f64.neg (br_if 0 (f64.const 1.0) (i32.const 1))))
+  )
   (func $as-binary-left (result i32)
     (block (result i32) (i32.add (br_if 0 (i32.const 1) (i32.const 1)) (i32.const 10)))
   )
@@ -395,61 +446,92 @@
   (func (export "_start")
     (call $assert_test_i32 (call $type-i32-value) (i32.const 1))
     (call $assert_test_i64 (call $type-i64-value) (i64.const 2))
+    (call $assert_test_f32 (call $type-f32-value) (f32.const 3))
+    (call $assert_test_f64 (call $type-f64-value) (f64.const 4))
+
     (call $assert_test_i32 (call $as-block-first (i32.const 0)) (i32.const 2))
     (call $assert_test_i32 (call $as-block-first (i32.const 1)) (i32.const 3))
     (call $assert_test_i32 (call $as-block-mid (i32.const 0)) (i32.const 2))
-    (call $assert_test_i32 (call $as-block-mid (i32.const 1)) (i32.const 3))
+    (call $assert_test_i32 (call $as-block-mid (i32.const 1)) (i32.const 3)) 
     (call $as-block-last (i32.const 0))
     (call $as-block-last (i32.const 1))
+
     (call $assert_test_i32 (call $as-block-first-value (i32.const 0)) (i32.const 11))
     (call $assert_test_i32 (call $as-block-first-value (i32.const 1)) (i32.const 10))
     (call $assert_test_i32 (call $as-block-mid-value (i32.const 0)) (i32.const 21))
     (call $assert_test_i32 (call $as-block-mid-value (i32.const 1)) (i32.const 20))
     (call $assert_test_i32 (call $as-block-last-value (i32.const 0)) (i32.const 11))
     (call $assert_test_i32 (call $as-block-last-value (i32.const 1)) (i32.const 11))
-    (call $assert_test_i32 (call $as-loop-first (i32.const 0)) (i32.const 2)) ;; Fail
+
+    (call $assert_test_i32 (call $as-loop-first (i32.const 0)) (i32.const 2))
     (call $assert_test_i32 (call $as-loop-first (i32.const 1)) (i32.const 3))
-    (call $assert_test_i32 (call $as-loop-mid (i32.const 0)) (i32.const 2));; Fail
+    (call $assert_test_i32 (call $as-loop-mid (i32.const 0)) (i32.const 2))
     (call $assert_test_i32 (call $as-loop-mid (i32.const 1)) (i32.const 4))
-    (call $assert_test_i32 (call $as-br-value) (i32.const 1));;
+    (call $as-loop-last (i32.const 0))
+    (call $as-loop-last (i32.const 1))
+
+    (call $assert_test_i32 (call $as-br-value) (i32.const 1))
+    
+    (call $as-br_if-cond)
     (call $assert_test_i32 (call $as-br_if-value) (i32.const 1))
     (call $assert_test_i32 (call $as-br_if-value-cond (i32.const 0)) (i32.const 2))
     (call $assert_test_i32 (call $as-br_if-value-cond (i32.const 1)) (i32.const 1))
+
+    (call $as-br_table-index)
     (call $assert_test_i32 (call $as-br_table-value) (i32.const 1))
     (call $assert_test_i32 (call $as-br_table-value-index) (i32.const 1))
+
     (call $assert_test_i64 (call $as-return-value) (i64.const 1))
+
     (call $assert_test_i32 (call $as-if-cond (i32.const 0)) (i32.const 2))
     (call $assert_test_i32 (call $as-if-cond (i32.const 1)) (i32.const 1))
+    (call $as-if-then (i32.const 0) (i32.const 0))
+    (call $as-if-then (i32.const 4) (i32.const 0))
+    (call $as-if-then (i32.const 0) (i32.const 1))
+    (call $as-if-then (i32.const 4) (i32.const 1))
+    (call $as-if-else (i32.const 0) (i32.const 0))
+    (call $as-if-else (i32.const 3) (i32.const 0))
+    (call $as-if-else (i32.const 0) (i32.const 1))
+    (call $as-if-else (i32.const 3) (i32.const 1))
+
     (call $assert_test_i32 (call $as-select-first (i32.const 0)) (i32.const 3))
     (call $assert_test_i32 (call $as-select-first (i32.const 1)) (i32.const 3))
     (call $assert_test_i32 (call $as-select-second (i32.const 0)) (i32.const 3))
     (call $assert_test_i32 (call $as-select-second (i32.const 1)) (i32.const 3))
     (call $assert_test_i32 (call $as-select-cond) (i32.const 3))
+
     (call $assert_test_i32 (call $as-call-first) (i32.const 12))
     (call $assert_test_i32 (call $as-call-mid) (i32.const 13))
     (call $assert_test_i32 (call $as-call-last) (i32.const 14))
+
     (call $assert_test_i32 (call $as-call_indirect-func) (i32.const 4))
     (call $assert_test_i32 (call $as-call_indirect-first) (i32.const 4))
     (call $assert_test_i32 (call $as-call_indirect-mid) (i32.const 4))
     (call $assert_test_i32 (call $as-call_indirect-last) (i32.const 4))
+
     (call $assert_test_i32 (call $as-local.set-value (i32.const 0)) (i32.const -1))
     (call $assert_test_i32 (call $as-local.set-value (i32.const 1)) (i32.const 17))
     (call $assert_test_i32 (call $as-local.tee-value (i32.const 0)) (i32.const -1))
     (call $assert_test_i32 (call $as-local.tee-value (i32.const 1)) (i32.const 1))
     (call $assert_test_i32 (call $as-global.set-value (i32.const 0)) (i32.const -1))
     (call $assert_test_i32 (call $as-global.set-value (i32.const 1)) (i32.const 1))
+
     (call $assert_test_i32 (call $as-load-address) (i32.const 1))
     (call $assert_test_i32 (call $as-loadN-address) (i32.const 30))
+
     (call $assert_test_i32 (call $as-store-address) (i32.const 30))
     (call $assert_test_i32 (call $as-store-value) (i32.const 31))
     (call $assert_test_i32 (call $as-storeN-address) (i32.const 32))
     (call $assert_test_i32 (call $as-storeN-value) (i32.const 33))
+
+    (call $assert_test_f64 (call $as-unary-operand) (f64.const 1.0))
     (call $assert_test_i32 (call $as-binary-left) (i32.const 1))
     (call $assert_test_i32 (call $as-binary-right) (i32.const 1))
     (call $assert_test_i32 (call $as-test-operand) (i32.const 0))
     (call $assert_test_i32 (call $as-compare-left) (i32.const 1))
     (call $assert_test_i32 (call $as-compare-right) (i32.const 1))
     (call $assert_test_i32 (call $as-memory.grow-size) (i32.const 1))
+
     (call $assert_test_i32 (call $nested-block-value (i32.const 0)) (i32.const 21))
     (call $assert_test_i32 (call $nested-block-value (i32.const 1)) (i32.const 9))
     (call $assert_test_i32 (call $nested-br-value (i32.const 0)) (i32.const 5))
@@ -462,19 +544,5 @@
     (call $assert_test_i32 (call $nested-br_table-value (i32.const 1)) (i32.const 9))
     (call $assert_test_i32 (call $nested-br_table-value-index (i32.const 0)) (i32.const 5))
     (call $assert_test_i32 (call $nested-br_table-value-index (i32.const 1)) (i32.const 9))
-
-
-    (call $as-loop-last (i32.const 0))
-    (call $as-loop-last (i32.const 1))
-    (call $as-br_if-cond)
-    (call $as-br_table-index)
-    (call $as-if-then (i32.const 0) (i32.const 0))
-    (call $as-if-then (i32.const 4) (i32.const 0))
-    (call $as-if-then (i32.const 0) (i32.const 1))
-    (call $as-if-then (i32.const 4) (i32.const 1))
-    (call $as-if-else (i32.const 0) (i32.const 0))
-    (call $as-if-else (i32.const 3) (i32.const 0))
-    (call $as-if-else (i32.const 0) (i32.const 1))
-    (call $as-if-else (i32.const 3) (i32.const 1))
   )
 )
