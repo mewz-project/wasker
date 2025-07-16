@@ -64,12 +64,28 @@
     (block (result i32) (i32.const 7))
   )
 
+  ;; TODO: support multiple return values
+  ;; (func $multi (result i32)
+  ;;   (block (call $dummy) (call $dummy) (call $dummy) (call $dummy))
+  ;;   (block (result i32)
+  ;;     (call $dummy) (call $dummy) (call $dummy) (i32.const 7) (call $dummy)
+  ;;   )
+  ;;   (drop)
+  ;;   (block (result i32 i64 i32)
+  ;;     (call $dummy) (call $dummy) (call $dummy) (i32.const 8) (call $dummy)
+  ;;     (call $dummy) (call $dummy) (call $dummy) (i64.const 7) (call $dummy)
+  ;;     (call $dummy) (call $dummy) (call $dummy) (i32.const 9) (call $dummy)
+  ;;   )
+  ;;   (drop) (drop)
+  ;; )
+
   (func $nested (result i32)
     (block (result i32)
       (block (call $dummy) (block) (nop))
       (block (result i32) (call $dummy) (i32.const 9))
     )
   )
+
   (func $deep (result i32)
     (block (result i32) (block (result i32)
       (block (result i32) (block (result i32)
@@ -111,6 +127,7 @@
       ))
     ))
   )
+
   (func $as-select-first (result i32)
     (select (block (result i32) (i32.const 1)) (i32.const 2) (i32.const 3))
   )
@@ -143,6 +160,7 @@
   (func $as-br_if-last (result i32)
     (block (result i32) (br_if 0 (i32.const 2) (block (result i32) (i32.const 1))))
   )
+
   (func $as-br_table-first (result i32)
     (block (result i32) (block (result i32) (i32.const 1)) (i32.const 2) (br_table 0 0))
   )
@@ -175,6 +193,7 @@
       )
     )
   )
+
   (func $as-store-first
     (block (result i32) (i32.const 1)) (i32.const 1) (i32.store)
   )
@@ -185,6 +204,7 @@
   (func $as-memory.grow-value (result i32)
     (memory.grow (block (result i32) (i32.const 1)))
   )
+
   (func $f (param i32) (result i32) (local.get 0))
 
   (func $as-call-value (result i32)
@@ -207,9 +227,11 @@
     (global.set $a (block (result i32) (i32.const 1)))
     (global.get $a)
   )
+
   (func $as-load-operand (result i32)
     (i32.load (block (result i32) (i32.const 1)))
   )
+
   (func $as-unary-operand (result i32)
     (i32.ctz (block (result i32) (call $dummy) (i32.const 13)))
   )
@@ -222,6 +244,36 @@
   (func $as-test-operand (result i32)
     (i32.eqz (block (result i32) (call $dummy) (i32.const 13)))
   )
+  (func $as-compare-operand (result i32)
+    (f32.gt
+      (block (result f32) (call $dummy) (f32.const 3))
+      (block (result f32) (call $dummy) (f32.const 3))
+    )
+  )
+  ;; TODO: support multiple return values
+  ;; (func $as-binary-operands (result i32)
+  ;;   (i32.mul
+  ;;     (block (result i32 i32)
+  ;;       (call $dummy) (i32.const 3) (call $dummy) (i32.const 4)
+  ;;     )
+  ;;   )
+  ;; )
+  ;; (func $as-compare-operands (result i32)
+  ;;   (f32.gt
+  ;;     (block (result f32 f32)
+  ;;       (call $dummy) (f32.const 3) (call $dummy) (f32.const 3)
+  ;;     )
+  ;;   )
+  ;; )
+  ;; (func $as-mixed-operands (result i32)
+  ;;   (block (result i32 i32)
+  ;;     (call $dummy) (i32.const 3) (call $dummy) (i32.const 4)
+  ;;   )
+  ;;   (i32.const 5)
+  ;;   (i32.add)
+  ;;   (i32.mul)
+  ;; )
+
   (func $break-bare (result i32)
     (block (br 0) (unreachable))
     (block (br_if 0 (i32.const 1)) (unreachable))
@@ -232,6 +284,13 @@
   (func $break-value (result i32)
     (block (result i32) (br 0 (i32.const 18)) (i32.const 19))
   )
+  ;; TODO: support multiple return values
+  ;; (func $break-multi-value (result i32 i32 i64)
+  ;;   (block (result i32 i32 i64)
+  ;;     (br 0 (i32.const 18) (i32.const -18) (i64.const 18))
+  ;;     (i32.const 19) (i32.const -19) (i64.const 19)
+  ;;   )
+  ;; )
   (func $break-repeated (result i32)
     (block (result i32)
       (br 0 (i32.const 18))
@@ -257,6 +316,50 @@
     )
     (local.get 0)
   )
+
+  ;; TODO: support block with parameters
+  ;; (func $param (result i32)
+  ;;   (i32.const 1)
+  ;;   (block (param i32) (result i32)
+  ;;     (i32.const 2)
+  ;;     (i32.add)
+  ;;   )
+  ;; )
+  ;; (func $params (result i32)
+  ;;   (i32.const 1)
+  ;;   (i32.const 2)
+  ;;   (block (param i32 i32) (result i32)
+  ;;     (i32.add)
+  ;;   )
+  ;; )
+  ;; (func $params-id (result i32)
+  ;;   (i32.const 1)
+  ;;   (i32.const 2)
+  ;;   (block (param i32 i32) (result i32 i32))
+  ;;   (i32.add)
+  ;; )
+  ;; (func $param-break (result i32)
+  ;;   (i32.const 1)
+  ;;   (block (param i32) (result i32)
+  ;;     (i32.const 2)
+  ;;     (i32.add)
+  ;;     (br 0)
+  ;;   )
+  ;; )
+  ;; (func $params-break (result i32)
+  ;;   (i32.const 1)
+  ;;   (i32.const 2)
+  ;;   (block (param i32 i32) (result i32)
+  ;;     (i32.add)
+  ;;     (br 0)
+  ;;   )
+  ;; )
+  ;; (func $params-id-break (result i32)
+  ;;   (i32.const 1)
+  ;;   (i32.const 2)
+  ;;   (block (param i32 i32) (result i32 i32) (br 0))
+  ;;   (i32.add)
+  ;; )
   
   (func $effects (result i32)
     (local i32)
@@ -273,20 +376,28 @@
   
   (func (export "_start")
     (call $assert_test_i32 (call $singular) (i32.const 7))
+    ;; TODO: support multiple return values
+    ;; (call $assert_test_i32 (call $multi) (i32.const 8))
     (call $assert_test_i32 (call $nested) (i32.const 9))
     (call $assert_test_i32 (call $deep) (i32.const 150))
+
     (call $assert_test_i32 (call $as-select-first) (i32.const 1))
     (call $assert_test_i32 (call $as-select-mid) (i32.const 2))
     (call $assert_test_i32 (call $as-select-last) (i32.const 2))
+
     (call $assert_test_i32 (call $as-loop-first) (i32.const 1))
     (call $assert_test_i32 (call $as-loop-mid) (i32.const 1))
     (call $assert_test_i32 (call $as-loop-last) (i32.const 1))
+
     (call $assert_test_i32 (call $as-if-then) (i32.const 1))
     (call $assert_test_i32 (call $as-if-else) (i32.const 2))
+
     (call $assert_test_i32 (call $as-br_if-first) (i32.const 1))
     (call $assert_test_i32 (call $as-br_if-last) (i32.const 2))
+
     (call $assert_test_i32 (call $as-br_table-first) (i32.const 1))
     (call $assert_test_i32 (call $as-br_table-last) (i32.const 2))
+
     (call $assert_test_i32 (call $as-call_indirect-first) (i32.const 1))
     (call $assert_test_i32 (call $as-call_indirect-mid) (i32.const 2))
     (call $assert_test_i32 (call $as-call_indirect-last) (i32.const 1))
@@ -300,14 +411,35 @@
     (call $assert_test_i32 (call $as-local.tee-value) (i32.const 1))
     (call $assert_test_i32 (call $as-global.set-value) (i32.const 1))
     (call $assert_test_i32 (call $as-load-operand) (i32.const 1))
+
     (call $assert_test_i32 (call $as-unary-operand) (i32.const 0))
     (call $assert_test_i32 (call $as-binary-operand) (i32.const 12))
     (call $assert_test_i32 (call $as-test-operand) (i32.const 0))
+    (call $assert_test_i32 (call $as-compare-operand) (i32.const 0))
+
+    ;; TODO: support multiple return values
+    ;; (call $assert_test_i32 (call $as-binary-operands) (i32.const 12))
+    ;; (call $assert_test_i32 (call $as-compare-operands) (i32.const 0))
+    ;; (call $assert_test_i32 (call $as-mixed-operands) (i32.const 27))
 
     (call $assert_test_i32 (call $break-bare) (i32.const 19))
     (call $assert_test_i32 (call $break-value) (i32.const 18))
+
+    ;; TODO: support multiple return values
+    ;; (call $assert_test_i32 (call $break-multi-value)
+    ;;   (i32.const 18) (i32.const -18) (i64.const 18)
+    ;; )
+
     (call $assert_test_i32 (call $break-repeated) (i32.const 18))
     (call $assert_test_i32 (call $break-inner) (i32.const 0xf))
+    
+    ;; TODO: support multiple return values
+    ;; (call $assert_test_i32 (call $param) (i32.const 3))
+    ;; (call $assert_test_i32 (call $params) (i32.const 3))
+    ;; (call $assert_test_i32 (call $params-id) (i32.const 3))
+    ;; (call $assert_test_i32 (call $param-break) (i32.const 3))
+    ;; (call $assert_test_i32 (call $params-break) (i32.const 3))
+    ;; (call $assert_test_i32 (call $params-id-break) (i32.const 3))
     (call $assert_test_i32 (call $effects) (i32.const 1))
   )
 )

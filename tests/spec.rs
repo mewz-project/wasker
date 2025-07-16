@@ -74,3 +74,18 @@ fn spec_i32() {
 fn spec_br() {
     run_test("br");
 }
+
+#[test]
+fn spec_br_if() {
+    run_test("br_if");
+}
+
+#[test]
+fn spec_br_table() {
+    run_test("br_table");
+}
+
+#[test]
+fn spec_block() {
+    run_test("block");
+}
