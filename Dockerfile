@@ -5,8 +5,6 @@ ARG LLVM_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0
 
 WORKDIR /wasker
 
-COPY . .
-
 # install dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -27,6 +25,8 @@ RUN mkdir -p /usr/local/llvm \
 ENV PATH=/usr/local/llvm/bin:$PATH
 ENV LLVM_SYS_150_PREFIX=/usr/local/llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4
 
+COPY . .
+
 RUN cargo build --release
 
 FROM debian:bookworm-slim
@@ -34,17 +34,5 @@ FROM debian:bookworm-slim
 WORKDIR /work
 
 COPY --from=builder /wasker/target/release/wasker /usr/bin/wasker
-COPY --from=builder /usr/local/llvm /usr/local/llvm
-
-# install dependencies
-RUN apt-get update && apt-get install -y \
-    libffi-dev \
-    build-essential \
-    libc6 \
-    libstdc++6
-    
-
-ENV PATH=/usr/local/llvm/bin:$PATH
-ENV LLVM_SYS_150_PREFIX=/usr/local/llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4
 
 ENTRYPOINT ["wasker"]
