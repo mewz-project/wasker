@@ -13,7 +13,7 @@ anyhow = "1.0.98"
 inkwell = { version = "0.1.1", features = ["llvm15-0"] }
 wat = "1.235.0"
 wasmparser = "0.102.0"
-clap = { version = "4.5.41", features = ["derive"]}
+clap = { version = "4.5.49", features = ["derive"]}
 log = "0.4.27"
 env_logger = "0.11.6"
 pretty-hex = "0.4.1"
