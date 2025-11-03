@@ -11,7 +11,7 @@ repository = "https://github.com/mewz-project/wasker"
 [dependencies]
 anyhow = "1.0.98"
 inkwell = { version = "0.1.1", features = ["llvm15-0"] }
-wat = "1.235.0"
+wat = "1.240.0"
 wasmparser = "0.102.0"
 clap = { version = "4.5.50", features = ["derive"]}
 log = "0.4.27"
