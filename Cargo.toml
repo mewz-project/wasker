@@ -9,7 +9,7 @@ repository = "https://github.com/mewz-project/wasker"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.98"
+anyhow = "1.0.100"
 inkwell = { version = "0.1.1", features = ["llvm15-0"] }
 wat = "1.240.0"
 wasmparser = "0.102.0"
