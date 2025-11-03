@@ -46,7 +46,7 @@ pub fn translate_module(mut data: &[u8], environment: &mut Environment<'_, '_>) 
             // this state isn't possible with `eof = true`
             Chunk::NeedMoreData(_) => unreachable!(),
         };
-        //log::debug!("### {:?}", payload.as_ref().expect("fail get payload"));
+
         match payload {
             Payload::TypeSection(types) => {
                 parse_type_section(types, environment)?;
@@ -83,19 +83,19 @@ pub fn translate_module(mut data: &[u8], environment: &mut Environment<'_, '_>) 
                 parse_custom_section(c, environment)?;
             }
             Payload::End(..) => {
-                log::debug!("EndSection");
+                log::trace!("EndSection");
                 break;
             }
             Payload::Version { num, encoding, .. } => {
-                log::debug!("version:{num}, encoding: {encoding:?}");
+                log::trace!("version:{num}, encoding: {encoding:?}");
             }
             Payload::CodeSectionStart { count, range, size } => {
-                log::debug!("CodeSectionStart: count:{count}, range:{range:?}, size:{size}",);
+                log::trace!("CodeSectionStart: count:{count}, range:{range:?}, size:{size}",);
                 parser.skip_section();
                 data = &data[size as usize..];
             }
             _other => {
-                log::warn!("Unimplemented Section. Run with `RUST_LOG=debug` environment variable for more info.");
+                log::warn!("Unimplemented Section. Run with `RUST_LOG=trace` environment variable for more info.");
             }
         }
     }
@@ -305,7 +305,7 @@ fn parse_type_section(
     environment: &mut Environment<'_, '_>,
 ) -> Result<()> {
     for entry in types {
-        log::debug!("Type Section: {entry:?}");
+        log::trace!("Type Section: {entry:?}");
         if let anyhow::Result::Ok(wasmparser::Type::Func(functype)) = entry {
             let params = functype.params();
             let returns = functype.results();
@@ -357,7 +357,7 @@ fn parse_import_section(
             }
         }
     }
-    log::debug!("- declare {} functions", environment.import_section_size);
+    log::trace!("- declare {} functions", environment.import_section_size);
     Ok(())
 }
 
@@ -374,7 +374,7 @@ fn parse_function_section(
         environment.function_list_name.push(fname);
     }
     environment.function_section_size = environment.function_list_signature.len() as u32;
-    log::debug!("- declare {} functions", environment.function_section_size);
+    log::trace!("- declare {} functions", environment.function_section_size);
     Ok(())
 }
 
@@ -387,7 +387,7 @@ fn parse_memory_section(
     for (i, memory) in memories.into_iter().enumerate() {
         let memory = memory?;
         size += memory.initial as u32;
-        log::debug!("- memory[{i}] = {memory:?}");
+        log::trace!("- memory[{i}] = {memory:?}");
     }
     let global = environment.module.add_global(
         environment.inkwell_types.i32_type,
@@ -420,7 +420,7 @@ fn parse_memory_section(
 fn parse_table_section(tables: TableSectionReader) -> Result<()> {
     for (i, table) in tables.into_iter().enumerate() {
         let table = table?;
-        log::debug!("- table[{}] size={:?}", i, table.ty.initial);
+        log::trace!("- table[{}] size={:?}", i, table.ty.initial);
     }
     Ok(())
 }
@@ -491,7 +491,7 @@ fn parse_global_section(
             environment.global.push(Global::Const { value: init_val });
         }
     }
-    log::debug!("- declare {} globals", environment.function_section_size);
+    log::trace!("- declare {} globals", environment.function_section_size);
     Ok(())
 }
 
@@ -501,11 +501,11 @@ fn parse_export_section(
 ) -> Result<()> {
     //let mut register_done_idx = environment.import_section_size;
     for export in exports {
-        log::debug!("ExportSection {export:?}");
+        log::trace!("ExportSection {export:?}");
         let export = export?;
         match export.kind {
             wasmparser::ExternalKind::Func => {
-                log::debug!("Export func[{}] = {}", export.name, export.index);
+                log::trace!("Export func[{}] = {}", export.name, export.index);
                 environment.function_list_name[export.index as usize] = export.name.to_string();
                 if export.name == "_start" {
                     environment.function_list_name[export.index as usize] =
@@ -514,7 +514,7 @@ fn parse_export_section(
                 }
             }
             _other => {
-                log::debug!("ExportSection: not support other than Memory");
+                log::trace!("ExportSection: not support other than Memory");
             }
         }
     }
@@ -532,7 +532,7 @@ fn parse_element_section(
                 table_index,
                 offset_expr,
             } => {
-                log::debug!("table[{table_index}]");
+                log::trace!("table[{table_index}]");
                 // TODO: support multiple tables
                 assert_eq!(table_index, 0);
 
@@ -568,7 +568,7 @@ fn parse_element_section(
                             let elem = elem?;
                             let func = environment.function_list[elem as usize];
                             fpointers.push(func.as_global_value().as_pointer_value());
-                            log::debug!("- elem[{}] = Function[{}]", i + offset as usize, elem);
+                            log::trace!("- elem[{}] = Function[{}]", i + offset as usize, elem);
                         }
                         let initializer = environment
                             .inkwell_types
@@ -605,7 +605,7 @@ fn parse_data_section(
 
     for data in datas {
         let data = data?;
-        log::debug!(
+        log::trace!(
             "DataSection　DDDataKind:{:?},  range:{}-{}",
             data.kind,
             data.range.start,
@@ -621,7 +621,7 @@ fn parse_data_section(
             } => {
                 // Make array from data
                 let size = data.data.len();
-                log::debug!("- data size = {size}");
+                log::trace!("- data size = {size}");
                 let array_ty = environment.inkwell_types.i8_type.array_type(size as u32);
                 let global_mem_initializer = environment.module.add_global(
                     array_ty,
@@ -638,7 +638,7 @@ fn parse_data_section(
                         .const_int(*d as u64, false);
                     data_intvalue.push(d_intvalue);
                 }
-                log::debug!("- data_intvalue.len = {}", data_intvalue.len());
+                log::trace!("- data_intvalue.len = {}", data_intvalue.len());
                 let initializer = environment
                     .inkwell_types
                     .i8_type
@@ -654,7 +654,7 @@ fn parse_data_section(
                     Operator::I32Const { value } => value,
                     _other => unreachable!("unsupported offset type"),
                 };
-                log::debug!("- offset = 0x{offset:x}");
+                log::trace!("- offset = 0x{offset:x}");
                 let offset_int = environment
                     .inkwell_types
                     .i64_type
@@ -699,7 +699,7 @@ fn parse_custom_section(
 ) -> Result<()> {
     //println!("{}", pretty_hex(&customs.data()));
     if customs.name() != "name" {
-        log::debug!("CustomSection other than `name` is not supported");
+        log::trace!("CustomSection other than `name` is not supported");
         return Ok(());
     }
     let name_section_reader = NameSectionReader::new(customs.data(), customs.data_offset());
@@ -723,7 +723,7 @@ fn parse_custom_section(
                     }
                 }
                 _ => {
-                    log::debug!("CustomSection: unsupported Name");
+                    log::trace!("CustomSection: unsupported Name");
                 }
             },
             Err(_) => {
@@ -742,7 +742,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
     } else {
         environment.current_function_idx + 1
     };
-    log::debug!("### function idx = {}", environment.current_function_idx);
+    log::trace!("### function idx = {}", environment.current_function_idx);
 
     // Create block
     let current_fn = environment.function_list[environment.current_function_idx as usize];
@@ -754,7 +754,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
     let ret = current_fn.get_type().get_return_type();
     let mut end_phis: Vec<PhiValue> = Vec::new();
     if let Some(v) = ret {
-        log::debug!("- return type {v:?}");
+        log::trace!("- return type {v:?}");
         let phi = environment.builder.build_phi(v, "return_phi");
         end_phis.push(phi);
     }
@@ -803,7 +803,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
             Err(e) => return Err(e.into()),
         };
 
-        log::debug!("CodeSection: op[{num_op}] = {op:?}");
+        log::trace!("CodeSection: op[{num_op}] = {op:?}");
         num_op += 1;
 
         parse_instruction(environment, &op, &current_fn, &locals)?;
