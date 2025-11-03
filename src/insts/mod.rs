@@ -21,7 +21,7 @@ pub(super) fn parse_instruction<'a>(
     locals: &[(PointerValue<'a>, BasicTypeEnum<'a>)],
 ) -> Result<()> {
     if environment.unreachable_depth != 0 {
-        log::debug!("- under unreachable");
+        log::trace!("- under unreachable");
 
         match op {
             Operator::Block { blockty: _ }
@@ -35,7 +35,7 @@ pub(super) fn parse_instruction<'a>(
                     control::gen_else(environment).context("error gen Else")?;
                     environment.unreachable_depth -= 1;
                     environment.unreachable_reason = UnreachableReason::Reachable;
-                    log::debug!("- end of unreachable");
+                    log::trace!("- end of unreachable");
                     return Ok(());
                 } else {
                     return Ok(());
@@ -49,7 +49,7 @@ pub(super) fn parse_instruction<'a>(
                     control::gen_end(environment, current_fn).context("error gen End")?;
                     environment.unreachable_depth -= 1;
                     environment.unreachable_reason = UnreachableReason::Reachable;
-                    log::debug!("- end of unreachable");
+                    log::trace!("- end of unreachable");
                     return Ok(());
                 }
                 2_u32..=u32::MAX => {
@@ -89,7 +89,7 @@ pub(super) fn parse_instruction<'a>(
             control::gen_br_table(environment, targets).context("error gen BrTable")?;
         }
         Operator::End => {
-            log::debug!(
+            log::trace!(
                 "- gen_end, fn = {:?}, ret = {:?}",
                 current_fn.get_name(),
                 current_fn.get_type().get_return_type()

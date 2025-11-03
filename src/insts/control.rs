@@ -354,7 +354,7 @@ pub(super) fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTa
     let values = environment.peekn(phis.len()).expect("fail stack peekn");
     for (i, phi) in phis.iter().enumerate().rev() {
         let value = values[i];
-        log::debug!("- add_incoming to {phi:?}");
+        log::trace!("- add_incoming to {phi:?}");
         phi.add_incoming(&[(&value, current_block)]);
     }
 
@@ -378,7 +378,7 @@ pub(super) fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTa
         for (i, phi) in phis.iter().enumerate().rev() {
             let value = values[i];
             phi.add_incoming(&[(&value, current_block)]);
-            log::debug!("- add_incoming to {phi:?}");
+            log::trace!("- add_incoming to {phi:?}");
         }
     }
     // switch
@@ -498,13 +498,13 @@ pub(super) fn gen_end<'a>(
         // Phi
         for phi in &end_phis {
             if phi.count_incoming() == 0 {
-                log::debug!("- no phi");
+                log::trace!("- no phi");
                 let basic_ty = phi.as_basic_value().get_type();
                 let placeholder_value = basic_ty.const_zero();
                 environment.stack.push(placeholder_value);
                 phi.as_instruction().erase_from_basic_block();
             } else {
-                log::debug!("- phi.incoming = {}", phi.count_incoming());
+                log::trace!("- phi.incoming = {}", phi.count_incoming());
                 let value = phi.as_basic_value();
                 environment.stack.push(value);
             }
