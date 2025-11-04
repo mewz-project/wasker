@@ -14,6 +14,6 @@ inkwell = { version = "0.1.1", features = ["llvm15-0"] }
 wat = "1.240.0"
 wasmparser = "0.102.0"
 clap = { version = "4.5.50", features = ["derive"]}
-log = "0.4.27"
+log = "0.4.28"
 env_logger = "0.11.6"
 pretty-hex = "0.4.1"
