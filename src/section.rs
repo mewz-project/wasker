@@ -352,9 +352,7 @@ fn parse_import_section(
                 environment.function_list_signature.push(ty);
                 environment.function_list_name.push(import.name.to_string());
             }
-            _other => {
-                unreachable!("ImportSection only support Func type");
-            }
+            _other => {}
         }
     }
     log::trace!("- declare {} functions", environment.import_section_size);
