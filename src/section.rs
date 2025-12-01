@@ -344,17 +344,15 @@ fn parse_import_section(
     imports: ImportSectionReader,
     environment: &mut Environment<'_, '_>,
 ) -> Result<()> {
-    environment.import_section_size = imports.count();
     for import in imports {
         let import = import?;
         match import.ty {
             TypeRef::Func(ty) => {
                 environment.function_list_signature.push(ty);
                 environment.function_list_name.push(import.name.to_string());
+                environment.import_section_size += 1;
             }
-            _other => {
-                environment.import_section_size -= 1;
-            }
+            _other => {}
         }
     }
     log::trace!("- declare {} functions", environment.import_section_size);
