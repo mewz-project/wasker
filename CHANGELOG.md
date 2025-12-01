@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2](https://github.com/mewz-project/wasker/compare/v0.2.1...v0.2.2) - 2025-12-01
+
+### Fixed
+
+- fix environment.import_section_size ([#108](https://github.com/mewz-project/wasker/pull/108))
+
+### Other
+
+- Clean up ImportSection handling for unsupported types ([#105](https://github.com/mewz-project/wasker/pull/105))
+
 ## [0.2.1](https://github.com/mewz-project/wasker/compare/v0.2.0...v0.2.1) - 2025-11-04
 
 ### Fixed
