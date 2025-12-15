@@ -1,4 +1,4 @@
-FROM rust:1.88.0-bookworm AS builder
+FROM rust:1.92.0-bookworm AS builder
 
 ARG LLVM_VERSION=15.0.0
 ARG LLVM_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.0/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4.tar.xz
