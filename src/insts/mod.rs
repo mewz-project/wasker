@@ -630,6 +630,58 @@ pub(super) fn parse_instruction<'a>(
             );
             environment.stack.push(converted.as_basic_value_enum());
         }
+        Operator::I32TruncSatF32U => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            let converted = environment.builder.build_float_to_signed_int(
+                v,
+                environment.inkwell_types.i32_type,
+                "i32truncsatf32u",
+            );
+            environment.stack.push(converted.as_basic_value_enum());
+        }
+        Operator::I32TruncSatF32S => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            let converted = environment.builder.build_float_to_signed_int(
+                v,
+                environment.inkwell_types.i32_type,
+                "i32truncsatf32s",
+            );
+            environment.stack.push(converted.as_basic_value_enum());
+        }
+        Operator::I32TruncSatF64S => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            let converted = environment.builder.build_float_to_signed_int(
+                v,
+                environment.inkwell_types.i32_type,
+                "i32truncsatf64s",
+            );
+            environment.stack.push(converted.as_basic_value_enum());
+        }
+        Operator::I64TruncSatF32S => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            let converted = environment.builder.build_float_to_signed_int(
+                v,
+                environment.inkwell_types.i64_type,
+                "i64truncsatf32s",
+            );
+            environment.stack.push(converted.as_basic_value_enum());
+        }
         Operator::F64ReinterpretI64 => {
             let v = environment
                 .stack
