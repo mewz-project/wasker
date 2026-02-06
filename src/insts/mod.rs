@@ -636,7 +636,7 @@ pub(super) fn parse_instruction<'a>(
                 .pop()
                 .expect("stack empty")
                 .into_float_value();
-            let converted = environment.builder.build_float_to_signed_int(
+            let converted = environment.builder.build_float_to_unsigned_int(
                 v,
                 environment.inkwell_types.i32_type,
                 "i32truncsatf32u",
@@ -666,6 +666,19 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i32_type,
                 "i32truncsatf64s",
+            );
+            environment.stack.push(converted.as_basic_value_enum());
+        }
+        Operator::I32TruncSatF64U => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            let converted = environment.builder.build_float_to_unsigned_int(
+                v,
+                environment.inkwell_types.i32_type,
+                "i32truncsatf64u",
             );
             environment.stack.push(converted.as_basic_value_enum());
         }
