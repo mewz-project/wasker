@@ -796,10 +796,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
     let mut op_reader = f.get_operators_reader()?.get_binary_reader();
     let mut num_op = 0;
     while !op_reader.eof() {
-        let op = match op_reader.read_operator() {
-            anyhow::Result::Ok(v) => v,
-            Err(e) => return Err(e.into()),
-        };
+        let op = op_reader.read_operator()?;
 
         log::trace!("CodeSection: op[{num_op}] = {op:?}");
         num_op += 1;
