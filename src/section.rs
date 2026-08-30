@@ -15,6 +15,7 @@ use wasmparser::{
     ValType,
 };
 
+
 use crate::inkwell::InkwellTypes;
 use crate::insts::control;
 use crate::{
@@ -245,21 +246,19 @@ fn setup(environment: &mut Environment<'_, '_>) -> Result<()> {
     // Call memory_base
     let linear_memory_offset = environment
         .builder
-        .build_call(memory_base_fn, &[], "linear_memory_offset")
-        .try_as_basic_value()
-        .left()
-        .expect("error build_call memory_base");
-    environment.builder.build_store::<PointerValue>(
+        .build_call(memory_base_fn, &[], "linear_memory_offset")?.try_as_basic_value()
+        .unwrap_basic();
+    environment.builder.build_store(
         linear_memory_offset_global.as_pointer_value(),
         linear_memory_offset.into_pointer_value(),
-    );
+    )?;
     environment.linear_memory_offset_global = Some(linear_memory_offset_global);
 
     let linear_memory_offset_int = environment.builder.build_ptr_to_int(
         linear_memory_offset.into_pointer_value(),
         environment.inkwell_types.i64_type,
         "linm_int",
-    );
+    )?;
     environment.linear_memory_offset_int = Some(linear_memory_offset_int);
 
     Ok(())
@@ -278,7 +277,7 @@ fn complete(environment: &mut Environment<'_, '_>) -> Result<()> {
         environment
             .wasker_main_block
             .expect("should define wasker_main_block"),
-    );
+    )?;
 
     // main
     environment.builder.position_at_end(
@@ -290,13 +289,13 @@ fn complete(environment: &mut Environment<'_, '_>) -> Result<()> {
         Some(idx) => {
             environment
                 .builder
-                .build_call(environment.function_list[idx as usize], &[], "");
+                .build_call(environment.function_list[idx as usize], &[], "")?;
         }
         None => {
             log::warn!("_start is not defined");
         }
     }
-    environment.builder.build_return(None);
+    environment.builder.build_return(None)?;
     Ok(())
 }
 
@@ -411,7 +410,7 @@ fn parse_memory_section(
             .const_int(size as u64, false)
             .into()],
         "linear_memory_offset",
-    );
+    )?;
     Ok(())
 }
 
@@ -663,12 +662,12 @@ fn parse_data_section(
                         .expect("should define linear_memory_offset_int"),
                     offset_int,
                     "dest_int",
-                );
+                )?;
                 let dest_ptr = environment.builder.build_int_to_ptr(
                     dest_int,
                     environment.inkwell_types.i64_ptr_type,
                     "dest_ptr",
-                );
+                )?;
 
                 // Memcpy from data to Linear Memory
                 environment
@@ -753,7 +752,7 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
     let mut end_phis: Vec<PhiValue> = Vec::new();
     if let Some(v) = ret {
         log::trace!("- return type {v:?}");
-        let phi = environment.builder.build_phi(v, "return_phi");
+        let phi = environment.builder.build_phi(v, "return_phi")?;
         end_phis.push(phi);
     }
 
@@ -773,9 +772,11 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
         let v = current_fn
             .get_nth_param(idx)
             .expect("fail to get_nth_param");
-        let ty = current_fn.get_type().get_param_types()[idx as usize];
-        let alloca = environment.builder.build_alloca(ty, "param");
-        environment.builder.build_store(alloca, v);
+        let ty: BasicTypeEnum = current_fn.get_type().get_param_types()[idx as usize]
+            .try_into()
+            .map_err(|_| anyhow!("unsupported param type"))?;
+        let alloca = environment.builder.build_alloca(ty, "param")?;
+        environment.builder.build_store(alloca, v)?;
         locals.push((alloca, ty));
     }
 
@@ -786,8 +787,8 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
         let (count, ty) = local_reader.read()?;
         let ty = wasmparser_to_inkwell(&ty, &environment.inkwell_types)?;
         for _ in 0..count {
-            let alloca = environment.builder.build_alloca(ty, "local");
-            environment.builder.build_store(alloca, ty.const_zero());
+            let alloca = environment.builder.build_alloca(ty, "local")?;
+            environment.builder.build_store(alloca, ty.const_zero())?;
             locals.push((alloca, ty));
         }
     }

@@ -72,12 +72,13 @@ impl<'ctx> InkwellTypes<'ctx> {
         let f64_type = context.f64_type();
 
         // basic pointer type
-        let i8_ptr_type = i8_type.ptr_type(AddressSpace::default());
-        let i16_ptr_type = i16_type.ptr_type(AddressSpace::default());
-        let i32_ptr_type = i32_type.ptr_type(AddressSpace::default());
-        let i64_ptr_type = i64_type.ptr_type(AddressSpace::default());
-        let f32_ptr_type = f32_type.ptr_type(AddressSpace::default());
-        let f64_ptr_type = f64_type.ptr_type(AddressSpace::default());
+        let ptr_type = context.ptr_type(AddressSpace::default());
+        let i8_ptr_type = ptr_type;
+        let i16_ptr_type = ptr_type;
+        let i32_ptr_type = ptr_type;
+        let i64_ptr_type = ptr_type;
+        let f32_ptr_type = ptr_type;
+        let f64_ptr_type = ptr_type;
 
         Self {
             void_type,
@@ -114,12 +115,13 @@ pub fn init_inkwell<'a>(
     let f64_type = context.f64_type();
 
     // basic pointer type
-    let i8_ptr_type = i8_type.ptr_type(AddressSpace::default());
-    let i16_ptr_type = i16_type.ptr_type(AddressSpace::default());
-    let i32_ptr_type = i32_type.ptr_type(AddressSpace::default());
-    let i64_ptr_type = i64_type.ptr_type(AddressSpace::default());
-    let f32_ptr_type = f32_type.ptr_type(AddressSpace::default());
-    let f64_ptr_type = f64_type.ptr_type(AddressSpace::default());
+    let ptr_type = context.ptr_type(AddressSpace::default());
+    let i8_ptr_type = ptr_type;
+    let i16_ptr_type = ptr_type;
+    let i32_ptr_type = ptr_type;
+    let i64_ptr_type = ptr_type;
+    let f32_ptr_type = ptr_type;
+    let f64_ptr_type = ptr_type;
 
     // basic metadata type
     let i1_ty_basic_md: BasicMetadataTypeEnum = i1_type.into();

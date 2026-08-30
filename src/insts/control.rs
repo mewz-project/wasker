@@ -1,5 +1,6 @@
 //! Definition of control instructions.
 
+
 use crate::environment::Environment;
 use crate::section;
 use anyhow::{bail, Result};
@@ -88,7 +89,7 @@ pub(super) fn gen_block(environment: &mut Environment<'_, '_>, blockty: &BlockTy
             let phi = environment.builder.build_phi(
                 section::wasmparser_to_inkwell(valty, &environment.inkwell_types).unwrap(),
                 "end_phi",
-            );
+            )?;
             phis.push(phi);
         }
         BlockType::FuncType(..) => {
@@ -129,7 +130,7 @@ pub(super) fn gen_loop(environment: &mut Environment<'_, '_>, blockty: &BlockTyp
             let phi = environment.builder.build_phi(
                 section::wasmparser_to_inkwell(valty, &environment.inkwell_types).unwrap(),
                 "end_phi",
-            );
+            )?;
             phis.push(phi);
         }
         BlockType::FuncType(..) => {
@@ -147,7 +148,7 @@ pub(super) fn gen_loop(environment: &mut Environment<'_, '_>, blockty: &BlockTyp
 
     // Move to loop_body
     environment.builder.position_at_end(current_block);
-    environment.builder.build_unconditional_branch(body_block);
+    environment.builder.build_unconditional_branch(body_block)?;
     environment.builder.position_at_end(body_block);
     Ok(())
 }
@@ -182,7 +183,7 @@ pub(super) fn gen_if(environment: &mut Environment<'_, '_>, blockty: &BlockType)
             let phi = environment.builder.build_phi(
                 section::wasmparser_to_inkwell(valty, &environment.inkwell_types).unwrap(),
                 "end_phi",
-            );
+            )?;
             end_phis.push(phi);
         }
         BlockType::FuncType(..) => {
@@ -211,10 +212,10 @@ pub(super) fn gen_if(environment: &mut Environment<'_, '_>, blockty: &BlockType)
             .into_int_value(),
         environment.inkwell_types.i32_type.const_int(0, false),
         "",
-    );
+    )?;
     environment
         .builder
-        .build_conditional_branch(cond_value, then_block, else_block);
+        .build_conditional_branch(cond_value, then_block, else_block)?;
 
     // Jump to then block
     environment.builder.position_at_end(then_block);
@@ -251,7 +252,7 @@ pub(super) fn gen_else(environment: &mut Environment<'_, '_>) -> Result<()> {
 
             // Jump to merge block from current block
             if !environment.unreachable_reason.is_jumped() {
-                environment.builder.build_unconditional_branch(*if_end);
+                environment.builder.build_unconditional_branch(*if_end)?;
             }
 
             // Define else block
@@ -284,7 +285,7 @@ pub(super) fn gen_br(environment: &mut Environment<'_, '_>, relative_depth: u32)
 
     environment
         .builder
-        .build_unconditional_branch(*frame.br_dest());
+        .build_unconditional_branch(*frame.br_dest())?;
     environment.unreachable_depth += 1;
     environment.unreachable_reason = UnreachableReason::Br;
     Ok(())
@@ -305,7 +306,7 @@ pub(super) fn gen_brif(environment: &mut Environment<'_, '_>, relative_depth: u3
         cond.into_int_value(),
         environment.inkwell_types.i32_type.const_int(0, false),
         "",
-    );
+    )?;
 
     // Phi
     let phis = match frame {
@@ -328,7 +329,7 @@ pub(super) fn gen_brif(environment: &mut Environment<'_, '_>, relative_depth: u3
     // Branch
     environment
         .builder
-        .build_conditional_branch(cond_value, *frame.br_dest(), else_block);
+        .build_conditional_branch(cond_value, *frame.br_dest(), else_block)?;
     environment.builder.position_at_end(else_block);
     Ok(())
 }
@@ -384,7 +385,7 @@ pub(super) fn gen_br_table(environment: &mut Environment<'_, '_>, targets: &BrTa
     // switch
     environment
         .builder
-        .build_switch(idx.into_int_value(), *default_frame.br_dest(), &cases);
+        .build_switch(idx.into_int_value(), *default_frame.br_dest(), &cases)?;
     environment.unreachable_depth += 1;
     environment.unreachable_reason = UnreachableReason::Br;
     Ok(())
@@ -410,23 +411,23 @@ pub(super) fn gen_end<'a>(
             UnreachableReason::Unreachable | UnreachableReason::Return => {
                 environment.builder.position_at_end(*frame.br_dest());
                 if current_fn.get_type().get_return_type().is_none() {
-                    environment.builder.build_return(None);
+                    environment.builder.build_return(None)?;
                 } else {
                     let ret_ty = current_fn
                         .get_type()
                         .get_return_type()
                         .expect("failed to get ret type");
                     let dummy = ret_ty.const_zero();
-                    environment.builder.build_return(Some(&dummy));
+                    environment.builder.build_return(Some(&dummy))?;
                 }
             }
             UnreachableReason::Reachable | UnreachableReason::Br => {
                 environment
                     .builder
-                    .build_unconditional_branch(*frame.br_dest());
+                    .build_unconditional_branch(*frame.br_dest())?;
                 environment.builder.position_at_end(*frame.br_dest());
                 if current_fn.get_type().get_return_type().is_none() {
-                    environment.builder.build_return(None);
+                    environment.builder.build_return(None)?;
                 } else {
                     let phis = match frame {
                         ControlFrame::Block { ref end_phis, .. } => end_phis,
@@ -447,7 +448,7 @@ pub(super) fn gen_end<'a>(
                     // Return value
                     // TODO: support multiple phis
                     let value = phis[0].as_basic_value();
-                    environment.builder.build_return(Some(&value));
+                    environment.builder.build_return(Some(&value))?;
                 }
             }
         }
@@ -476,7 +477,7 @@ pub(super) fn gen_end<'a>(
                 // Case Else block doesn't exist
                 if ifelse_state == IfElseState::If {
                     environment.builder.position_at_end(if_else);
-                    environment.builder.build_unconditional_branch(if_end);
+                    environment.builder.build_unconditional_branch(if_end)?;
                 }
                 (if_end, end_phis, stack_size)
             }
@@ -489,7 +490,7 @@ pub(super) fn gen_end<'a>(
             }
             // Jump
             environment.builder.position_at_end(current_block);
-            environment.builder.build_unconditional_branch(next);
+            environment.builder.build_unconditional_branch(next)?;
         }
 
         environment.builder.position_at_end(next);
@@ -520,9 +521,9 @@ pub(super) fn gen_call(environment: &mut Environment<'_, '_>, function_index: u3
     let mut args: Vec<BasicMetadataValueEnum> = Vec::new();
 
     if fn_called.get_name().to_str() == anyhow::Result::Ok("print") {
-        args.push(environment.pop_and_load().into());
+        args.push(environment.pop_and_load()?.into());
 
-        let arg0 = environment.pop_and_load();
+        let arg0 = environment.pop_and_load()?;
         let linear_memory_offset_local = environment.builder.build_load(
             environment.inkwell_types.i8_ptr_type,
             environment
@@ -530,17 +531,17 @@ pub(super) fn gen_call(environment: &mut Environment<'_, '_>, function_index: u3
                 .expect("should define linet_memory_offset_global")
                 .as_pointer_value(),
             "linm_local",
-        );
+        )?;
         let linear_memory_offset_int = environment.builder.build_ptr_to_int(
             linear_memory_offset_local.into_pointer_value(),
             environment.inkwell_types.i64_type,
             "linm_int",
-        );
+        )?;
         let offset = arg0.into_int_value();
         let translated_address =
             environment
                 .builder
-                .build_int_add(linear_memory_offset_int, offset, "transed_addr");
+                .build_int_add(linear_memory_offset_int, offset, "transed_addr")?;
         args.push(translated_address.into());
     } else {
         for _ in 0..fn_called.count_params() {
@@ -549,14 +550,9 @@ pub(super) fn gen_call(environment: &mut Environment<'_, '_>, function_index: u3
     }
     // call
     args.reverse();
-    let call_site = environment.builder.build_call(fn_called, &args[..], "");
-    if call_site.try_as_basic_value().is_left() {
-        environment.stack.push(
-            call_site
-                .try_as_basic_value()
-                .left()
-                .expect("fail translate call_site"),
-        );
+    let call_site = environment.builder.build_call(fn_called, &args[..], "")?;
+    if call_site.try_as_basic_value().is_basic() {
+        environment.stack.push(call_site.try_as_basic_value().unwrap_basic());
     }
     Ok(())
 }
@@ -585,12 +581,12 @@ pub(super) fn gen_call_indirect(
                 .as_pointer_value(),
             &[idx],
             "dst_addr",
-        )
+        )?
     };
     let fptr =
         environment
             .builder
-            .build_load(environment.inkwell_types.i8_ptr_type, dst_addr, "fptr");
+            .build_load(environment.inkwell_types.i8_ptr_type, dst_addr, "fptr")?;
 
     // args
     let func_type = environment.function_signature_list[type_index as usize];
@@ -606,14 +602,9 @@ pub(super) fn gen_call_indirect(
         fptr.into_pointer_value(),
         &args,
         "call_site",
-    );
-    if call_site.try_as_basic_value().is_left() {
-        environment.stack.push(
-            call_site
-                .try_as_basic_value()
-                .left()
-                .expect("fail translate call_site"),
-        );
+    )?;
+    if call_site.try_as_basic_value().is_basic() {
+        environment.stack.push(call_site.try_as_basic_value().unwrap_basic());
     }
     Ok(())
 }
@@ -632,12 +623,12 @@ pub(super) fn gen_return(
     environment.unreachable_reason = UnreachableReason::Return;
 
     if current_fn.get_type().get_return_type().is_none() {
-        environment.builder.build_return(None);
+        environment.builder.build_return(None)?;
     } else {
         // Return value
         // TODO: support multiple phis
         let ret = environment.stack.pop().expect("stack empty");
-        environment.builder.build_return(Some(&ret));
+        environment.builder.build_return(Some(&ret))?;
     }
 
     Ok(())
@@ -652,8 +643,8 @@ pub(super) fn gen_select(environment: &mut Environment<'_, '_>) -> Result<()> {
         v3.into_int_value(),
         environment.inkwell_types.i32_type.const_zero(),
         "",
-    );
-    let res = environment.builder.build_select(cond, v1, v2, "");
+    )?;
+    let res = environment.builder.build_select(cond, v1, v2, "")?;
     environment.stack.push(res);
     Ok(())
 }
@@ -661,6 +652,6 @@ pub(super) fn gen_select(environment: &mut Environment<'_, '_>) -> Result<()> {
 pub(super) fn gen_unreachable(environment: &mut Environment<'_, '_>) -> Result<()> {
     environment.unreachable_depth += 1;
     environment.unreachable_reason = UnreachableReason::Unreachable;
-    environment.builder.build_unreachable();
+    environment.builder.build_unreachable()?;
     Ok(())
 }
