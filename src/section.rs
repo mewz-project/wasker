@@ -772,9 +772,10 @@ fn parse_code_section(f: FunctionBody, environment: &mut Environment<'_, '_>) ->
         let v = current_fn
             .get_nth_param(idx)
             .expect("fail to get_nth_param");
-        let ty: BasicTypeEnum = current_fn.get_type().get_param_types()[idx as usize]
+        let param_md_ty = current_fn.get_type().get_param_types()[idx as usize];
+        let ty: BasicTypeEnum = param_md_ty
             .try_into()
-            .map_err(|_| anyhow!("unsupported param type"))?;
+            .map_err(|_| anyhow!("unsupported param type at index {idx}: {param_md_ty:?}"))?;
         let alloca = environment.builder.build_alloca(ty, "param")?;
         environment.builder.build_store(alloca, v)?;
         locals.push((alloca, ty));
