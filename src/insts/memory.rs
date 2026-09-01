@@ -89,9 +89,9 @@ pub fn memory_copy(
     );
     environment
         .builder
-        .build_memcpy(dst_addr, 1, src_addr, 1, len.into_int_value())
+        .build_memmove(dst_addr, 1, src_addr, 1, len.into_int_value())
         .map_err(|e| anyhow!(e))
-        .context("error build_memcpy")?;
+        .context("error build_memmove")?;
     Ok(())
 }
 
