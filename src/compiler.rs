@@ -5,7 +5,7 @@ use crate::inkwell::init_inkwell;
 use crate::section::translate_module;
 use anyhow::{anyhow, Context, Result};
 use clap::Parser;
-use inkwell::{context, module::Module, passes::PassManager, targets};
+use inkwell::{context, passes::PassBuilderOptions, targets};
 use std::path;
 use wat;
 
@@ -50,44 +50,22 @@ pub fn compile_wasm(wasm: &[u8], args: &Args) -> Result<()> {
     // translate wasm to LLVM IR
     translate_module(wasm, &mut environment)?;
 
-    let pass_manager: PassManager<Module<'_>> = PassManager::create(());
-    pass_manager.add_type_based_alias_analysis_pass();
-    pass_manager.add_sccp_pass();
-    pass_manager.add_prune_eh_pass();
-    pass_manager.add_dead_arg_elimination_pass();
-    pass_manager.add_lower_expect_intrinsic_pass();
-    pass_manager.add_scalar_repl_aggregates_pass();
-    pass_manager.add_instruction_combining_pass();
-    pass_manager.add_jump_threading_pass();
-    pass_manager.add_correlated_value_propagation_pass();
-    pass_manager.add_cfg_simplification_pass();
-    pass_manager.add_reassociate_pass();
-    pass_manager.add_loop_rotate_pass();
-    pass_manager.add_ind_var_simplify_pass();
-    pass_manager.add_licm_pass();
-    pass_manager.add_loop_vectorize_pass();
-    pass_manager.add_instruction_combining_pass();
-    pass_manager.add_sccp_pass();
-    pass_manager.add_reassociate_pass();
-    pass_manager.add_cfg_simplification_pass();
-    pass_manager.add_gvn_pass();
-    pass_manager.add_memcpy_optimize_pass();
-    pass_manager.add_dead_store_elimination_pass();
-    pass_manager.add_bit_tracking_dce_pass();
-    pass_manager.add_instruction_combining_pass();
-    pass_manager.add_reassociate_pass();
-    pass_manager.add_cfg_simplification_pass();
-    pass_manager.add_early_cse_pass();
-    pass_manager.run_on(&module);
+    let target_machine =
+        get_host_target_machine().map_err(|e| anyhow!(e)).context("error get_host_target_machine")?;
+    let pass_options = PassBuilderOptions::create();
+    module
+        .run_passes("default<O3>", &target_machine, pass_options)
+        .map_err(|e| anyhow!(e.to_string()))
+        .context("fail run_passes")?;
 
     // output LLVM IR to native ELF
-    output_elf(environment).context("error output_elf")?;
+    output_elf(environment, &target_machine).context("error output_elf")?;
 
     log::info!("Compile success");
     Ok(())
 }
 
-fn output_elf(environment: Environment) -> Result<()> {
+fn output_elf(environment: Environment, target_machine: &targets::TargetMachine) -> Result<()> {
     let obj_path = path::Path::new(environment.output_file);
     let ll_path = obj_path.with_extension("ll");
 
@@ -99,8 +77,7 @@ fn output_elf(environment: Environment) -> Result<()> {
         .context("fail print_to_file")?;
 
     log::info!("write to {}, it may take a while", obj_path.display());
-    get_host_target_machine()
-        .expect("error get_host_target_machine")
+    target_machine
         .write_to_file(
             environment.module,
             targets::FileType::Object,

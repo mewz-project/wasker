@@ -11,6 +11,7 @@ use inkwell::{
 };
 use std::path::Path;
 
+
 use crate::inkwell::{InkwellInsts, InkwellTypes};
 use crate::insts::control::{ControlFrame, UnreachableReason};
 
@@ -125,16 +126,16 @@ impl<'a, 'b> Environment<'a, 'b> {
     }
 
     /// Pop the stack and load the value if it is a pointer.
-    pub fn pop_and_load(&mut self) -> BasicValueEnum<'a> {
+    pub fn pop_and_load(&mut self) -> Result<BasicValueEnum<'a>> {
         let pop = self.stack.pop().expect("stack empty");
         if pop.is_pointer_value() {
-            self.builder.build_load(
+            Ok(self.builder.build_load(
                 self.inkwell_types.i64_type,
                 pop.into_pointer_value(),
                 "from_stack",
-            )
+            )?)
         } else {
-            pop
+            Ok(pop)
         }
     }
 

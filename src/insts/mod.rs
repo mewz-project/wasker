@@ -11,6 +11,7 @@ use inkwell::{
 };
 use wasmparser::Operator;
 
+
 use crate::environment::{Environment, Global};
 use crate::insts::control::UnreachableReason;
 
@@ -146,7 +147,7 @@ pub(super) fn parse_instruction<'a>(
                 .const_int(value.bits() as u64, false);
             let i = environment
                 .builder
-                .build_bitcast(bits, environment.inkwell_types.f32_type, "");
+                .build_bit_cast(bits, environment.inkwell_types.f32_type, "")?;
             environment.stack.push(i.as_basic_value_enum());
         }
         Operator::F64Const { value } => {
@@ -156,7 +157,7 @@ pub(super) fn parse_instruction<'a>(
                 .const_int(value.bits(), false);
             let i = environment
                 .builder
-                .build_bitcast(bits, environment.inkwell_types.f64_type, "");
+                .build_bit_cast(bits, environment.inkwell_types.f64_type, "")?;
             environment.stack.push(i.as_basic_value_enum());
         }
         Operator::I32Clz => {
@@ -230,7 +231,7 @@ pub(super) fn parse_instruction<'a>(
             let res =
                 environment
                     .builder
-                    .build_int_add(v1.into_int_value(), v2.into_int_value(), "");
+                    .build_int_add(v1.into_int_value(), v2.into_int_value(), "")?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::I32Sub | Operator::I64Sub => {
@@ -238,7 +239,7 @@ pub(super) fn parse_instruction<'a>(
             let res =
                 environment
                     .builder
-                    .build_int_sub(v1.into_int_value(), v2.into_int_value(), "");
+                    .build_int_sub(v1.into_int_value(), v2.into_int_value(), "")?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::I32Mul | Operator::I64Mul => {
@@ -246,7 +247,7 @@ pub(super) fn parse_instruction<'a>(
             let res =
                 environment
                     .builder
-                    .build_int_mul(v1.into_int_value(), v2.into_int_value(), "");
+                    .build_int_mul(v1.into_int_value(), v2.into_int_value(), "")?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::I32DivS | Operator::I64DivS => {
@@ -255,7 +256,7 @@ pub(super) fn parse_instruction<'a>(
                 v1.into_int_value(),
                 v2.into_int_value(),
                 "",
-            );
+            )?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::I32DivU | Operator::I64DivU => {
@@ -264,7 +265,7 @@ pub(super) fn parse_instruction<'a>(
                 v1.into_int_value(),
                 v2.into_int_value(),
                 "",
-            );
+            )?;
             environment.stack.push(res.as_basic_value_enum());
         }
         /* % operator */
@@ -306,15 +307,15 @@ pub(super) fn parse_instruction<'a>(
                     v1.into_int_value(),
                     min_value,
                     "",
-                ),
+                )?,
                 environment.builder.build_int_compare(
                     inkwell::IntPredicate::EQ,
                     v2.into_int_value(),
                     neg_one_value,
                     "",
-                ),
+                )?,
                 "overflow",
-            );
+            )?;
             let v1_new = environment.builder.build_select(
                 overflow,
                 if matches!(op, Operator::I32RemS) {
@@ -324,12 +325,12 @@ pub(super) fn parse_instruction<'a>(
                 },
                 v1.into_int_value(),
                 "v1_new",
-            );
+            )?;
             let res = environment.builder.build_int_signed_rem(
                 v1_new.into_int_value(),
                 v2.into_int_value(),
                 "",
-            );
+            )?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::I32RemU | Operator::I64RemU => {
@@ -338,7 +339,7 @@ pub(super) fn parse_instruction<'a>(
                 v1.into_int_value(),
                 v2.into_int_value(),
                 "",
-            );
+            )?;
             environment.stack.push(res.as_basic_value_enum());
         }
         /******************************
@@ -386,7 +387,7 @@ pub(super) fn parse_instruction<'a>(
             let wraped =
                 environment
                     .builder
-                    .build_int_truncate(v, environment.inkwell_types.i32_type, "");
+                    .build_int_truncate(v, environment.inkwell_types.i32_type, "")?;
             environment.stack.push(wraped.as_basic_value_enum());
         }
         Operator::I64Extend32S => {
@@ -398,12 +399,12 @@ pub(super) fn parse_instruction<'a>(
             let narrow_value =
                 environment
                     .builder
-                    .build_int_truncate(v, environment.inkwell_types.i32_type, "");
+                    .build_int_truncate(v, environment.inkwell_types.i32_type, "")?;
             let extended = environment.builder.build_int_s_extend(
                 narrow_value,
                 environment.inkwell_types.i64_type,
                 "i64extend32s",
-            );
+            )?;
             environment.stack.push(extended.as_basic_value_enum());
         }
         Operator::I64Extend16S => {
@@ -415,12 +416,12 @@ pub(super) fn parse_instruction<'a>(
             let narrow_value =
                 environment
                     .builder
-                    .build_int_truncate(v, environment.inkwell_types.i16_type, "");
+                    .build_int_truncate(v, environment.inkwell_types.i16_type, "")?;
             let extended = environment.builder.build_int_s_extend(
                 narrow_value,
                 environment.inkwell_types.i64_type,
                 "i64extend16s",
-            );
+            )?;
             environment.stack.push(extended.as_basic_value_enum());
         }
         Operator::I64Extend8S => {
@@ -432,12 +433,12 @@ pub(super) fn parse_instruction<'a>(
             let narrow_value =
                 environment
                     .builder
-                    .build_int_truncate(v, environment.inkwell_types.i8_type, "");
+                    .build_int_truncate(v, environment.inkwell_types.i8_type, "")?;
             let extended = environment.builder.build_int_s_extend(
                 narrow_value,
                 environment.inkwell_types.i64_type,
                 "i64extend8s",
-            );
+            )?;
             environment.stack.push(extended.as_basic_value_enum());
         }
         Operator::I32Extend16S => {
@@ -449,12 +450,12 @@ pub(super) fn parse_instruction<'a>(
             let narrow_value =
                 environment
                     .builder
-                    .build_int_truncate(v, environment.inkwell_types.i16_type, "");
+                    .build_int_truncate(v, environment.inkwell_types.i16_type, "")?;
             let extended = environment.builder.build_int_s_extend(
                 narrow_value,
                 environment.inkwell_types.i32_type,
                 "i32extend16s",
-            );
+            )?;
             environment.stack.push(extended.as_basic_value_enum());
         }
         Operator::I32Extend8S => {
@@ -466,12 +467,12 @@ pub(super) fn parse_instruction<'a>(
             let narrow_value =
                 environment
                     .builder
-                    .build_int_truncate(v, environment.inkwell_types.i8_type, "");
+                    .build_int_truncate(v, environment.inkwell_types.i8_type, "")?;
             let extended = environment.builder.build_int_s_extend(
                 narrow_value,
                 environment.inkwell_types.i32_type,
                 "i32extend8s",
-            );
+            )?;
             environment.stack.push(extended.as_basic_value_enum());
         }
         Operator::I64ExtendI32U => {
@@ -484,7 +485,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i64_type,
                 "i64extendi32u",
-            );
+            )?;
             environment.stack.push(extended.as_basic_value_enum());
         }
         Operator::I64ExtendI32S => {
@@ -497,7 +498,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i64_type,
                 "i64extendi32s",
-            );
+            )?;
             environment.stack.push(extended.as_basic_value_enum());
         }
         Operator::F32DemoteF64 => {
@@ -510,7 +511,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.f32_type,
                 "f32demotef64",
-            );
+            )?;
             environment.stack.push(demoted.as_basic_value_enum());
         }
         Operator::F64PromoteF32 => {
@@ -523,7 +524,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.f64_type,
                 "f64promotef32",
-            );
+            )?;
             environment.stack.push(promoted.as_basic_value_enum());
         }
         Operator::F64ConvertI64S | Operator::F64ConvertI32S => {
@@ -536,7 +537,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.f64_type,
                 "f64converti64s",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::F64ConvertI64U | Operator::F64ConvertI32U => {
@@ -549,7 +550,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.f64_type,
                 "f64converti64u",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::F32ConvertI32S | Operator::F32ConvertI64S => {
@@ -562,7 +563,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.f32_type,
                 "f32converti32s",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::F32ConvertI32U | Operator::F32ConvertI64U => {
@@ -575,7 +576,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.f32_type,
                 "f32converti32u",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I64TruncF64S | Operator::I64TruncF32S => {
@@ -588,7 +589,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i64_type,
                 "i64truncf64s",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I32TruncF32S | Operator::I32TruncF64S => {
@@ -601,7 +602,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i32_type,
                 "i32truncf32s",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I64TruncF64U | Operator::I64TruncF32U => {
@@ -614,7 +615,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i64_type,
                 "i64truncf64u",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I32TruncF32U | Operator::I32TruncF64U => {
@@ -627,7 +628,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i32_type,
                 "i32truncf32u",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I32TruncSatF32U => {
@@ -640,7 +641,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i32_type,
                 "i32truncsatf32u",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I32TruncSatF32S => {
@@ -653,7 +654,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i32_type,
                 "i32truncsatf32s",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I32TruncSatF64S => {
@@ -666,7 +667,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i32_type,
                 "i32truncsatf64s",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I32TruncSatF64U => {
@@ -679,7 +680,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i32_type,
                 "i32truncsatf64u",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::I64TruncSatF32S => {
@@ -692,7 +693,7 @@ pub(super) fn parse_instruction<'a>(
                 v,
                 environment.inkwell_types.i64_type,
                 "i64truncsatf32s",
-            );
+            )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
         Operator::F64ReinterpretI64 => {
@@ -704,7 +705,7 @@ pub(super) fn parse_instruction<'a>(
             let reinterpreted =
                 environment
                     .builder
-                    .build_bitcast(v, environment.inkwell_types.f64_type, "");
+                    .build_bit_cast(v, environment.inkwell_types.f64_type, "")?;
             environment.stack.push(reinterpreted);
         }
         Operator::F32ReinterpretI32 => {
@@ -716,7 +717,7 @@ pub(super) fn parse_instruction<'a>(
             let reinterpreted =
                 environment
                     .builder
-                    .build_bitcast(v, environment.inkwell_types.f32_type, "");
+                    .build_bit_cast(v, environment.inkwell_types.f32_type, "")?;
             environment.stack.push(reinterpreted);
         }
         Operator::I64ReinterpretF64 => {
@@ -728,7 +729,7 @@ pub(super) fn parse_instruction<'a>(
             let reinterpreted =
                 environment
                     .builder
-                    .build_bitcast(v, environment.inkwell_types.i64_type, "");
+                    .build_bit_cast(v, environment.inkwell_types.i64_type, "")?;
             environment.stack.push(reinterpreted);
         }
         Operator::I32ReinterpretF32 => {
@@ -740,7 +741,7 @@ pub(super) fn parse_instruction<'a>(
             let reinterpreted =
                 environment
                     .builder
-                    .build_bitcast(v, environment.inkwell_types.i32_type, "");
+                    .build_bit_cast(v, environment.inkwell_types.i32_type, "")?;
             environment.stack.push(reinterpreted);
         }
         /******************************
@@ -800,7 +801,7 @@ pub(super) fn parse_instruction<'a>(
             let v1 = environment.stack.pop().expect("stack empty");
             let res = environment
                 .builder
-                .build_float_neg(v1.into_float_value(), "f64neg");
+                .build_float_neg(v1.into_float_value(), "f64neg")?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::F32Neg => {
@@ -809,7 +810,7 @@ pub(super) fn parse_instruction<'a>(
                 .pop()
                 .expect("stack empty")
                 .into_float_value();
-            let res = environment.builder.build_float_neg(v, "f32neg");
+            let res = environment.builder.build_float_neg(v, "f32neg")?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::F64Ceil => {
@@ -948,7 +949,7 @@ pub(super) fn parse_instruction<'a>(
                 v1.into_float_value(),
                 v2.into_float_value(),
                 "",
-            );
+            )?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::F64Sub | Operator::F32Sub => {
@@ -957,7 +958,7 @@ pub(super) fn parse_instruction<'a>(
                 v1.into_float_value(),
                 v2.into_float_value(),
                 "",
-            );
+            )?;
             environment.stack.push(res.as_basic_value_enum());
         }
         Operator::F64Mul | Operator::F32Mul => {
@@ -966,7 +967,7 @@ pub(super) fn parse_instruction<'a>(
                 v1.into_float_value(),
                 v2.into_float_value(),
                 "",
-            );
+            )?;
             environment.stack.push(res.as_basic_value_enum());
         }
 
@@ -976,7 +977,7 @@ pub(super) fn parse_instruction<'a>(
                 v1.into_float_value(),
                 v2.into_float_value(),
                 "",
-            );
+            )?;
             environment.stack.push(res.as_basic_value_enum());
         }
 
@@ -1044,7 +1045,7 @@ pub(super) fn parse_instruction<'a>(
                 locals[*local_index as usize].1,
                 locals[*local_index as usize].0,
                 "",
-            );
+            )?;
             environment.stack.push(v);
         }
         // Sets the value of the local variable
@@ -1052,13 +1053,13 @@ pub(super) fn parse_instruction<'a>(
             assert!(*local_index < locals.len() as u32);
             let local_value_pointer = locals[*local_index as usize].0;
             let v = environment.stack.pop().expect("stack empty");
-            environment.builder.build_store(local_value_pointer, v);
+            environment.builder.build_store(local_value_pointer, v)?;
         }
         Operator::LocalTee { local_index } => {
             assert!(*local_index < locals.len() as u32);
             let ptr_local_value = locals[*local_index as usize].0;
             let v = environment.stack.pop().expect("stack empty");
-            environment.builder.build_store(ptr_local_value, v);
+            environment.builder.build_store(ptr_local_value, v)?;
             environment.stack.push(v);
         }
         Operator::GlobalGet { global_index } => {
@@ -1072,7 +1073,7 @@ pub(super) fn parse_instruction<'a>(
                     let value =
                         environment
                             .builder
-                            .build_load(*ty, ptr_to_value.as_pointer_value(), "");
+                            .build_load(*ty, ptr_to_value.as_pointer_value(), "")?;
                     environment.stack.push(value);
                 }
             };
@@ -1091,7 +1092,7 @@ pub(super) fn parse_instruction<'a>(
                     let value = environment.stack.pop().expect("stack empty");
                     environment
                         .builder
-                        .build_store(ptr_to_value.as_pointer_value(), value);
+                        .build_store(ptr_to_value.as_pointer_value(), value)?;
                 }
             };
         }
@@ -1415,10 +1416,8 @@ fn helper_code_gen_llvm_insts<'a>(
 ) -> Result<()> {
     let res = environment
         .builder
-        .build_call(function, args, "")
-        .try_as_basic_value()
-        .left()
-        .expect("fail build_call llvm_insts");
+        .build_call(function, args, "")?.try_as_basic_value()
+        .unwrap_basic();
     environment.stack.push(res);
     Ok(())
 }

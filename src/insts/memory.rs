@@ -3,9 +3,8 @@
 use crate::environment::Environment;
 use anyhow::{anyhow, Context, Ok, Result};
 use inkwell::{
-    types::{BasicType, PointerType},
+    types::PointerType,
     values::{BasicValue, IntValue, PointerValue},
-    AddressSpace,
 };
 use wasmparser::MemArg;
 
@@ -17,7 +16,7 @@ pub fn memory_size(environment: &mut Environment<'_, '_>) -> Result<()> {
             .expect("should defined global_memory_size")
             .as_pointer_value(),
         "mem_size",
-    );
+    )?;
     environment.stack.push(size);
     Ok(())
 }
@@ -31,7 +30,7 @@ pub fn memory_grow(environment: &mut Environment<'_, '_>) -> Result<()> {
             .expect("shold define fn_memory_grow"),
         &[delta.into()],
         "memory_grow",
-    );
+    )?;
 
     // Load old memory size
     let size_old = environment.builder.build_load(
@@ -41,21 +40,21 @@ pub fn memory_grow(environment: &mut Environment<'_, '_>) -> Result<()> {
             .expect("should define global_memory_size")
             .as_pointer_value(),
         "mem_size_old",
-    );
+    )?;
     environment.stack.push(size_old);
 
     // Update new memory size
     let size_new =
         environment
             .builder
-            .build_int_add(size_old.into_int_value(), delta.into_int_value(), "");
+            .build_int_add(size_old.into_int_value(), delta.into_int_value(), "")?;
     environment.builder.build_store(
         environment
             .global_memory_size
             .expect("shold define global_memory_size")
             .as_pointer_value(),
         size_new,
-    );
+    )?;
     Ok(())
 }
 
@@ -73,20 +72,14 @@ pub fn memory_copy(
     let dst = environment.stack.pop().expect("stack empty");
     let src_addr = resolve_pointer(
         src.into_int_value(),
-        environment
-            .inkwell_types
-            .i32_type
-            .ptr_type(AddressSpace::default()),
+        environment.inkwell_types.i32_ptr_type,
         environment,
-    );
+    )?;
     let dst_addr = resolve_pointer(
         dst.into_int_value(),
-        environment
-            .inkwell_types
-            .i32_type
-            .ptr_type(AddressSpace::default()),
+        environment.inkwell_types.i32_ptr_type,
         environment,
-    );
+    )?;
     environment
         .builder
         .build_memmove(dst_addr, 1, src_addr, 1, len.into_int_value())
@@ -104,17 +97,14 @@ pub fn memory_fill(environment: &mut Environment<'_, '_>, mem: u32) -> Result<()
     let dst = environment.stack.pop().expect("stack empty");
     let dst_addr = resolve_pointer(
         dst.into_int_value(),
-        environment
-            .inkwell_types
-            .i32_type
-            .ptr_type(AddressSpace::default()),
+        environment.inkwell_types.i32_ptr_type,
         environment,
-    );
+    )?;
     let val_i8 = environment.builder.build_int_truncate(
         val.into_int_value(),
         environment.inkwell_types.i8_type,
         "val_i8",
-    );
+    )?;
     environment
         .builder
         .build_memset(dst_addr, 1, val_i8, len.into_int_value())
@@ -142,25 +132,25 @@ pub fn generate_load<'a>(
         address_operand,
         environment.inkwell_types.i64_type,
         "",
-    );
+    )?;
     let memarg_offset = environment
         .inkwell_types
         .i64_type
         .const_int(memarg.offset, false);
     let offset = environment
         .builder
-        .build_int_add(address_operand_ex, memarg_offset, "offset");
+        .build_int_add(address_operand_ex, memarg_offset, "offset")?;
 
     // get actual virtual address
     let dst_addr = resolve_pointer(
         offset,
-        load_type.ptr_type(AddressSpace::default()),
+        environment.inkwell_types.i32_ptr_type,
         environment,
-    );
+    )?;
     // load value
     let result = environment
         .builder
-        .build_load(load_type, dst_addr, "loaded");
+        .build_load(load_type, dst_addr, "loaded")?;
 
     // push loaded value
     if require_extend {
@@ -170,12 +160,12 @@ pub fn generate_load<'a>(
                 result.into_int_value(),
                 extended_type.into_int_type(),
                 "loaded_extended",
-            ),
+            )?,
             false => environment.builder.build_int_z_extend(
                 result.into_int_value(),
                 extended_type.into_int_type(),
                 "loaded_extended",
-            ),
+            )?,
         };
         environment
             .stack
@@ -207,31 +197,31 @@ pub fn generate_store<'a>(
         address_operand,
         environment.inkwell_types.i64_type,
         "",
-    );
+    )?;
     let memarg_offset = environment
         .inkwell_types
         .i64_type
         .const_int(memarg.offset, false);
     let offset = environment
         .builder
-        .build_int_add(address_operand_ex, memarg_offset, "offset");
+        .build_int_add(address_operand_ex, memarg_offset, "offset")?;
 
     // get actual virtual address
     let dst_addr = resolve_pointer(
         offset,
-        store_type.ptr_type(AddressSpace::default()),
+        environment.inkwell_types.i32_ptr_type,
         environment,
-    );
+    )?;
 
     if require_narrow {
         let narrow_value = environment.builder.build_int_truncate(
             value.into_int_value(),
             store_type.into_int_type(),
             "narrow_value",
-        );
-        environment.builder.build_store(dst_addr, narrow_value);
+        )?;
+        environment.builder.build_store(dst_addr, narrow_value)?;
     } else {
-        environment.builder.build_store(dst_addr, value);
+        environment.builder.build_store(dst_addr, value)?;
     }
 
     Ok(())
@@ -241,7 +231,7 @@ fn resolve_pointer<'a>(
     offset: IntValue<'a>,
     ptr_type: PointerType<'a>,
     environment: &mut Environment<'a, '_>,
-) -> PointerValue<'a> {
+) -> Result<PointerValue<'a>> {
     // get base addr of linear memory from global variable
     let linear_memory_offset_local = environment
         .builder
@@ -252,7 +242,7 @@ fn resolve_pointer<'a>(
                 .expect("stack empty")
                 .as_pointer_value(),
             "linm_local",
-        )
+        )?
         .into_pointer_value();
     // calculate base + offset
     let dst_addr = unsafe {
@@ -261,11 +251,11 @@ fn resolve_pointer<'a>(
             linear_memory_offset_local,
             &[offset],
             "resolved_addr",
-        )
+        )?
     };
     // cast pointer value
-    environment
+    Ok(environment
         .builder
-        .build_bitcast(dst_addr, ptr_type, "bit_casted")
-        .into_pointer_value()
+        .build_bit_cast(dst_addr, ptr_type, "bit_casted")?
+        .into_pointer_value())
 }

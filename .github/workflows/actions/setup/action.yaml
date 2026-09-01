@@ -8,10 +8,12 @@ runs:
     - name: Install LLVM
       shell: bash
       run: |
-        export LLVM_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.0/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4.tar.xz
+        sudo apt-get update
+        sudo apt-get install -y libzstd-dev libxml2-dev
+        export LLVM_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-Linux-X64.tar.xz
         sudo mkdir -p /usr/local/llvm \
         && sudo wget ${LLVM_URL} -O /tmp/llvm.tar.xz \
         && sudo tar -xvf /tmp/llvm.tar.xz -C /usr/local/llvm \
         && sudo rm /tmp/llvm.tar.xz
-        echo "/usr/local/llvm/bin" >> $GITHUB_PATH
-        echo "LLVM_SYS_150_PREFIX=/usr/local/llvm/clang+llvm-15.0.0-x86_64-linux-gnu-rhel-8.4" >> $GITHUB_ENV
+        echo "/usr/local/llvm/LLVM-22.1.8-Linux-X64/bin" >> $GITHUB_PATH
+        echo "LLVM_SYS_221_PREFIX=/usr/local/llvm/LLVM-22.1.8-Linux-X64" >> $GITHUB_ENV
