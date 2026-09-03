@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3](https://github.com/mewz-project/wasker/compare/v0.2.2...v0.2.3) - 2026-09-03
+
+### Other
+
+- *(deps)* bump log from 0.4.28 to 0.4.29 ([#110](https://github.com/mewz-project/wasker/pull/110))
+- *(deps)* bump actions/checkout from 5 to 6 ([#102](https://github.com/mewz-project/wasker/pull/102))
+- Upgrade inkwell to 0.10.0 (LLVM22) ([#117](https://github.com/mewz-project/wasker/pull/117))
+- Use memmove for Wasm's memory.copy ([#118](https://github.com/mewz-project/wasker/pull/118))
+
 ## [0.2.2](https://github.com/mewz-project/wasker/compare/v0.2.1...v0.2.2) - 2026-02-06
 
 ### Fixed
