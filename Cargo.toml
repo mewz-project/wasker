@@ -1,6 +1,6 @@
 [package]
 name = "wasker"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 description = "Wasm compiler for running Wasm on your favorite kernel"
 license = "MIT"
