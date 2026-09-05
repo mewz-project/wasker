@@ -1,0 +1,116 @@
+name: Build Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+env:
+  LLVM_VERSION: 22.1.8
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    container: alpine:3.21
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: x86_64
+            llvm_target: X86
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+            llvm_target: AArch64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install build dependencies
+        run: |
+          apk add --no-cache \
+            alpine-sdk bash cmake curl file git ninja python3 \
+            flex bison samurai \
+            zlib-dev zstd-dev libxml2-dev libffi-dev \
+            zlib-static zstd-static libxml2-static
+
+      - name: Install Rust toolchain
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Restore LLVM cache
+        id: llvm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /opt/llvm
+          key: llvm-musl-${{ matrix.arch }}-${{ env.LLVM_VERSION }}
+
+      - name: Build LLVM from source
+        if: steps.llvm-cache.outputs.cache-hit != 'true'
+        run: |
+          LLVM_SRC=llvm-project-${{ env.LLVM_VERSION }}.src
+          wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${LLVM_SRC}.tar.xz"
+          tar -xf "${LLVM_SRC}.tar.xz"
+          cmake -G Ninja -S "${LLVM_SRC}/llvm" -B /tmp/llvm-build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/opt/llvm \
+            -DLLVM_ENABLE_PROJECTS="" \
+            -DLLVM_TARGETS_TO_BUILD="${{ matrix.llvm_target }}" \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_ENABLE_BINDINGS=OFF \
+            -DLLVM_ENABLE_LIBEDIT=OFF \
+            -DLLVM_ENABLE_LIBPFM=OFF \
+            -DLLVM_ENABLE_TERMINFO=OFF \
+            -DLLVM_ENABLE_ZLIB=FORCE_ON \
+            -DLLVM_ENABLE_ZSTD=FORCE_ON \
+            -DLLVM_ENABLE_LIBXML2=FORCE_ON \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DLLVM_BUILD_LLVM_DYLIB=OFF \
+            -DLLVM_LINK_LLVM_DYLIB=OFF
+          cmake --build /tmp/llvm-build --target install -j "$(nproc)"
+
+      - name: Save LLVM cache
+        if: steps.llvm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /opt/llvm
+          key: llvm-musl-${{ matrix.arch }}-${{ env.LLVM_VERSION }}
+
+      - name: Build fully static release binary
+        env:
+          LLVM_SYS_221_PREFIX: /opt/llvm
+        run: |
+          export PATH="/opt/llvm/bin:$PATH"
+          export RUSTFLAGS="-C link-arg=-static"
+          llvm-config --version
+          cargo build --release --features inkwell/llvm22-1-force-static
+          strip target/release/wasker
+
+      - name: Verify binary is static
+        run: |
+          file target/release/wasker
+          if ldd target/release/wasker; then
+            echo "expected a fully static binary" >&2
+            exit 1
+          fi
+          ./target/release/wasker --help
+
+      - name: Create tarball
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p "dist/wasker-${VERSION}-linux-${{ matrix.arch }}-musl"
+          cp target/release/wasker LICENSE README.md \
+            "dist/wasker-${VERSION}-linux-${{ matrix.arch }}-musl/"
+          tar -czf "dist/wasker-${VERSION}-linux-${{ matrix.arch }}-musl.tar.gz" \
+            -C dist "wasker-${VERSION}-linux-${{ matrix.arch }}-musl"
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/wasker-*-linux-${{ matrix.arch }}-musl.tar.gz
