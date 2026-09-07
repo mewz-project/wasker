@@ -317,9 +317,9 @@ checksum = "9b2a4787296e9989611394c33f193f676704af1686e70b8f8033ab5ba9a35a94"
 
 [[package]]
 name = "pretty-hex"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbc83ee4a840062f368f9096d80077a9841ec117e17e7f700df81958f1451254"
+checksum = "9a65843dfefbafd3c879c683306959a6de478443ffe9c9adf02f5976432402d7"
 
 [[package]]
 name = "proc-macro2"
