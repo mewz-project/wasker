@@ -10,6 +10,7 @@ use std::path;
 use wat;
 
 #[derive(Parser, Debug)]
+#[command(version)]
 pub struct Args {
     pub input_file: path::PathBuf,
 
