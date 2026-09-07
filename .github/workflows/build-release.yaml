@@ -27,7 +27,7 @@ jobs:
             llvm_target: AArch64
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install build dependencies
         run: |
@@ -38,9 +38,7 @@ jobs:
             zlib-static zstd-static libxml2-static
 
       - name: Install Rust toolchain
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Restore LLVM cache
         id: llvm-cache
@@ -101,16 +99,16 @@ jobs:
           fi
           ./target/release/wasker --help
 
-      - name: Create tarball
+      - name: Prepare release binary
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          mkdir -p "dist/wasker-${VERSION}-linux-${{ matrix.arch }}-musl"
-          cp target/release/wasker LICENSE README.md \
-            "dist/wasker-${VERSION}-linux-${{ matrix.arch }}-musl/"
-          tar -czf "dist/wasker-${VERSION}-linux-${{ matrix.arch }}-musl.tar.gz" \
-            -C dist "wasker-${VERSION}-linux-${{ matrix.arch }}-musl"
+          mkdir -p dist
+          cp target/release/wasker "dist/wasker-linux-${{ matrix.arch }}-musl"
+          cp target/release/wasker "dist/wasker-${VERSION}-linux-${{ matrix.arch }}-musl"
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/wasker-*-linux-${{ matrix.arch }}-musl.tar.gz
+          files: |
+            dist/wasker-linux-${{ matrix.arch }}-musl
+            dist/wasker-*-linux-${{ matrix.arch }}-musl
