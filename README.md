@@ -27,12 +27,12 @@ Wasker empowers your favorite OS to serve as a Wasm runtime!
 
 ## Step1: Install Wasker
 
-Download the latest release tarball for your architecture from the [Releases](https://github.com/mewz-project/wasker/releases) page, then install:
+Download and install the latest release binary for your architecture:
 
 ```
-VERSION=0.2.2
-curl -sSfL "https://github.com/mewz-project/wasker/releases/download/v${VERSION}/wasker-${VERSION}-linux-$(uname -m)-musl.tar.gz" \
-  | tar -xzvC /usr/bin/ wasker
+curl -sSfL "https://github.com/mewz-project/wasker/releases/latest/download/wasker-linux-$(uname -m)-musl" \
+  -o /usr/bin/wasker
+chmod +x /usr/bin/wasker
 ```
 
 Release binaries are fully static (musl + LLVM built from source). No runtime dependencies are required.
