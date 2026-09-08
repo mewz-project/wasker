@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4](https://github.com/mewz-project/wasker/compare/v0.2.3...v0.2.4) - 2026-09-08
+
+### Other
+
+- Add --version option ([#122](https://github.com/mewz-project/wasker/pull/122))
+- *(deps)* bump rust from 1.88.0-bookworm to 1.98.0-bookworm ([#123](https://github.com/mewz-project/wasker/pull/123))
+
 ## [0.2.3](https://github.com/mewz-project/wasker/compare/v0.2.2...v0.2.3) - 2026-09-03
 
 ### Other
