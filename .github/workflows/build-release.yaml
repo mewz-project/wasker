@@ -1,8 +1,12 @@
 name: Build Release
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to build and upload assets to
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -27,13 +31,15 @@ jobs:
             llvm_target: AArch64
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Install build dependencies
         run: |
           apk add --no-cache \
             alpine-sdk bash cmake curl file git ninja python3 xz \
-            flex bison samurai \\
+            flex bison samurai \
             zlib-dev zstd-dev libxml2-dev libffi-dev \
             zlib-static zstd-static libxml2-static
 
@@ -100,8 +106,10 @@ jobs:
           ./target/release/wasker --help
 
       - name: Prepare release binary
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_TAG#v}"
           mkdir -p dist
           cp target/release/wasker "dist/wasker-linux-${{ matrix.arch }}-musl"
           cp target/release/wasker "dist/wasker-${VERSION}-linux-${{ matrix.arch }}-musl"
@@ -109,6 +117,7 @@ jobs:
       - name: Upload release asset
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ inputs.tag }}
           files: |
             dist/wasker-linux-${{ matrix.arch }}-musl
             dist/wasker-*-linux-${{ matrix.arch }}-musl
