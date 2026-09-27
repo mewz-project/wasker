@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5](https://github.com/mewz-project/wasker/compare/v0.2.4...v0.2.5) - 2026-09-27
+
+### Other
+
+- Fix release build ([#135](https://github.com/mewz-project/wasker/pull/135))
+- *(deps)* bump actions/cache from 4 to 6 ([#131](https://github.com/mewz-project/wasker/pull/131))
+- *(deps)* bump softprops/action-gh-release from 2 to 3 ([#130](https://github.com/mewz-project/wasker/pull/130))
+- *(deps)* bump actions/checkout from 6 to 7 ([#124](https://github.com/mewz-project/wasker/pull/124))
+
 ## [0.2.4](https://github.com/mewz-project/wasker/compare/v0.2.3...v0.2.4) - 2026-09-26
 
 ### Other
