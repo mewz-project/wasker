@@ -18,7 +18,7 @@
 #define RESERVED_SIZE (8ULL << 30)
 
 static char *linear_memory;
-static long linear_memory_pages;
+static uint32_t linear_memory_pages;
 
 char *memory_base(void)
 {
@@ -33,18 +33,19 @@ char *memory_base(void)
     return linear_memory;
 }
 
-long memory_grow(long num)
+// Declared as `i32 (i32)` by Wasker. The delta is unsigned in Wasm.
+int32_t memory_grow(uint32_t num)
 {
-    long old = linear_memory_pages;
-    if (num < 0 || old + num > MAX_PAGES) {
+    uint32_t old = linear_memory_pages;
+    if (num > MAX_PAGES - old) {
         return -1;
     }
-    if (num > 0 &&
-        mprotect(linear_memory + old * PAGE_SIZE, num * PAGE_SIZE, PROT_READ | PROT_WRITE) != 0) {
+    if (num > 0 && mprotect(linear_memory + (size_t)old * PAGE_SIZE, (size_t)num * PAGE_SIZE,
+                            PROT_READ | PROT_WRITE) != 0) {
         return -1;
     }
     linear_memory_pages += num;
-    return old;
+    return (int32_t)old;
 }
 
 //////////////////////////////////////////////

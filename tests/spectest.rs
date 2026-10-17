@@ -13,7 +13,7 @@ use ignore_list::{Ignore, IGNORE_LIST};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, ExitStatus};
 use wast::core::{NanPattern, WastArgCore, WastRetCore};
 use wast::lexer::Lexer;
 use wast::parser::{self, ParseBuffer};
@@ -129,11 +129,58 @@ spec_tests! {
     utf8_invalid_encoding => "utf8-invalid-encoding.wast",
 }
 
+/// Spec test features that this runner does not handle.
+///
+/// They are decided only from the wast file (directives, values, and the types of the module),
+/// never from a failure to generate test cases, so that a bug in the runner cannot silently
+/// turn an assertion into one not handled by the runner. A failure to generate test cases is a failure.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+enum NotHandledByRunner {
+    /// Directives such as `register`, `assert_exhaustion` and `assert_unlinkable`.
+    Directive,
+    /// `assert_malformed` with a text module, which is rejected by the text parser, not by Wasker.
+    QuoteModule,
+    /// A module that the wast crate cannot encode into a binary.
+    UnencodableModule,
+    /// `invoke $module ...`, which needs linking multiple modules.
+    NamedModule,
+    /// An action other than `invoke`, such as `get`.
+    NonInvoke,
+    /// Values other than i32, i64, f32 and f64.
+    ValueType,
+    /// Functions with multiple results.
+    MultiValue,
+    /// Export names that cannot be used as a symbol name.
+    SymbolName,
+}
+
+/// Why test cases cannot be generated for an assertion.
+enum Skip {
+    NotHandledByRunner(NotHandledByRunner),
+    /// The assertion should be supported, so this is a failure.
+    Error(String),
+}
+
 #[derive(Default)]
 struct Stats {
     executed: usize,
     ignored: usize,
-    unsupported: usize,
+    not_handled_by_runner: BTreeMap<NotHandledByRunner, usize>,
+}
+
+impl Stats {
+    fn not_handled_by_runner(&mut self, kind: NotHandledByRunner) {
+        *self.not_handled_by_runner.entry(kind).or_default() += 1;
+    }
+
+    /// Record the result of generating test cases for an assertion.
+    fn record(&mut self, result: Result<(), Skip>, location: String, failures: &mut Vec<String>) {
+        match result {
+            Ok(()) => self.executed += 1,
+            Err(Skip::NotHandledByRunner(kind)) => self.not_handled_by_runner(kind),
+            Err(Skip::Error(e)) => failures.push(format!("{location}: {e}")),
+        }
+    }
 }
 
 fn run_wast(file: &str) {
@@ -197,16 +244,15 @@ fn run_wast(file: &str) {
                     continue;
                 };
                 let WastExecute::Invoke(invoke) = exec else {
-                    stats.unsupported += 1;
+                    stats.not_handled_by_runner(NotHandledByRunner::NonInvoke);
                     continue;
                 };
                 if is_ignored(file, line, Some(invoke.name)) {
                     stats.ignored += 1;
-                } else if test_cases.assert_return(line, &invoke, &results) {
-                    stats.executed += 1;
-                } else {
-                    stats.unsupported += 1;
+                    continue;
                 }
+                let result = test_cases.assert_return(line, &invoke, &results);
+                stats.record(result, format!("{file}:{line}"), &mut failures);
             }
             WastDirective::AssertTrap { exec, .. } => {
                 let Some(test_cases) = current.as_mut() else {
@@ -215,16 +261,15 @@ fn run_wast(file: &str) {
                     continue;
                 };
                 let WastExecute::Invoke(invoke) = exec else {
-                    stats.unsupported += 1;
+                    stats.not_handled_by_runner(NotHandledByRunner::NonInvoke);
                     continue;
                 };
                 if is_ignored(file, line, Some(invoke.name)) {
                     stats.ignored += 1;
-                } else if test_cases.assert_trap(line, &invoke) {
-                    stats.executed += 1;
-                } else {
-                    stats.unsupported += 1;
+                    continue;
                 }
+                let result = test_cases.assert_trap(line, &invoke);
+                stats.record(result, format!("{file}:{line}"), &mut failures);
             }
             WastDirective::Invoke(invoke) => {
                 let Some(test_cases) = current.as_mut() else {
@@ -234,11 +279,10 @@ fn run_wast(file: &str) {
                 };
                 if is_ignored(file, line, Some(invoke.name)) {
                     stats.ignored += 1;
-                } else if test_cases.invoke(line, &invoke) {
-                    stats.executed += 1;
-                } else {
-                    stats.unsupported += 1;
+                    continue;
                 }
+                let result = test_cases.invoke(line, &invoke);
+                stats.record(result, format!("{file}:{line}"), &mut failures);
             }
             WastDirective::AssertInvalid { mut module, .. } => {
                 if is_ignored(file, line, None) || assert_invalid_ignored() {
@@ -250,15 +294,14 @@ fn run_wast(file: &str) {
                         stats.executed += 1;
                         expect_compile_error(&dir, file, line, &wasm, &mut failures);
                     }
-                    // The module cannot be encoded into a binary to give Wasker.
-                    Err(_) => stats.unsupported += 1,
+                    Err(_) => stats.not_handled_by_runner(NotHandledByRunner::UnencodableModule),
                 }
             }
-            // Malformed text modules are rejected by the text parser, not by Wasker.
             WastDirective::AssertMalformed {
-                module: mut module @ QuoteWat::Wat(_),
+                module: QuoteWat::QuoteModule(..),
                 ..
-            } => {
+            } => stats.not_handled_by_runner(NotHandledByRunner::QuoteModule),
+            WastDirective::AssertMalformed { mut module, .. } => {
                 if is_ignored(file, line, None) {
                     stats.ignored += 1;
                     continue;
@@ -268,10 +311,10 @@ fn run_wast(file: &str) {
                         stats.executed += 1;
                         expect_compile_error(&dir, file, line, &wasm, &mut failures);
                     }
-                    Err(_) => stats.unsupported += 1,
+                    Err(_) => stats.not_handled_by_runner(NotHandledByRunner::UnencodableModule),
                 }
             }
-            _ => stats.unsupported += 1,
+            _ => stats.not_handled_by_runner(NotHandledByRunner::Directive),
         }
     }
     if let Some(test_cases) = current.take() {
@@ -279,10 +322,10 @@ fn run_wast(file: &str) {
     }
 
     println!(
-        "{file}: executed {}, ignored {}, unsupported {}, failed {}",
+        "{file}: executed {}, ignored {}, not handled by runner {:?}, failed {}",
         stats.executed,
         stats.ignored,
-        stats.unsupported,
+        stats.not_handled_by_runner,
         failures.len()
     );
     if !failures.is_empty() {
@@ -315,9 +358,25 @@ fn assert_invalid_ignored() -> bool {
         .any(|ignore| matches!(ignore, Ignore::AssertInvalid { .. }))
 }
 
-/// Run Wasker on `wasm` and return the exit code (None if it was killed by a signal).
-fn run_wasker(wasm_path: &Path, obj_path: &Path) -> (Option<i32>, String) {
-    let output = Command::new(WASKER)
+/// Run `program` with the time limit. `timeout` exits with 124 when the limit is exceeded.
+fn command_with_timeout(program: &Path) -> Command {
+    let mut command = Command::new("timeout");
+    command.arg(TIMEOUT_SECS).arg(program);
+    command
+}
+
+/// Describe an abnormal exit status of a process run by `command_with_timeout`.
+fn describe_status(status: ExitStatus) -> String {
+    match status.code() {
+        Some(124) => format!("timed out after {TIMEOUT_SECS}s"),
+        Some(code) => format!("exit code {code}"),
+        None => format!("killed ({status})"),
+    }
+}
+
+/// Run Wasker on `wasm` and return its exit status and stderr.
+fn run_wasker(wasm_path: &Path, obj_path: &Path) -> (ExitStatus, String) {
+    let output = command_with_timeout(Path::new(WASKER))
         .arg(wasm_path)
         .arg("-o")
         .arg(obj_path)
@@ -325,12 +384,12 @@ fn run_wasker(wasm_path: &Path, obj_path: &Path) -> (Option<i32>, String) {
         .output()
         .expect("run wasker");
     (
-        output.status.code(),
+        output.status,
         String::from_utf8_lossy(&output.stderr).into_owned(),
     )
 }
 
-/// Wasker must reject `wasm` with an error (exit code 1). A panic or a crash is a failure.
+/// Wasker must reject `wasm` with an error (exit code 1). A panic, a crash or a timeout is a failure.
 fn expect_compile_error(
     dir: &Path,
     file: &str,
@@ -340,14 +399,15 @@ fn expect_compile_error(
 ) {
     let wasm_path = dir.join(format!("invalid_{line}.wasm"));
     fs::write(&wasm_path, wasm).expect("write wasm");
-    let (code, stderr) = run_wasker(&wasm_path, &dir.join(format!("invalid_{line}.o")));
-    match code {
+    let (status, stderr) = run_wasker(&wasm_path, &dir.join(format!("invalid_{line}.o")));
+    match status.code() {
         Some(1) => {}
         Some(0) => failures.push(format!(
             "{file}:{line}: expected a compile error, but compiled successfully"
         )),
         _ => failures.push(format!(
-            "{file}:{line}: expected a compile error, but wasker crashed ({code:?}): {}",
+            "{file}:{line}: expected a compile error, but wasker failed ({}): {}",
+            describe_status(status),
             error_message(&stderr)
         )),
     }
@@ -394,8 +454,10 @@ struct FuncType {
     results: Vec<ValType>,
 }
 
-/// Read the types of the exported functions. Functions using other types are omitted.
-fn exported_functions(wasm: &[u8]) -> Result<HashMap<String, FuncType>, String> {
+/// Read the types of the exported functions. A function whose types the runner does not handle maps to the reason.
+fn exported_functions(
+    wasm: &[u8],
+) -> Result<HashMap<String, Result<FuncType, NotHandledByRunner>>, String> {
     use wasmparser::{ExternalKind, Payload, Type, TypeRef};
 
     let convert = |types: &[wasmparser::ValType]| -> Option<Vec<ValType>> {
@@ -419,10 +481,14 @@ fn exported_functions(wasm: &[u8]) -> Result<HashMap<String, FuncType>, String> 
             Payload::TypeSection(reader) => {
                 for ty in reader {
                     types.push(match ty {
-                        Ok(Type::Func(f)) => convert(f.params())
-                            .zip(convert(f.results()))
-                            .map(|(params, results)| FuncType { params, results }),
-                        _ => None,
+                        Ok(Type::Func(f)) => match (convert(f.params()), convert(f.results())) {
+                            (Some(_), Some(results)) if results.len() > 1 => {
+                                Err(NotHandledByRunner::MultiValue)
+                            }
+                            (Some(params), Some(results)) => Ok(FuncType { params, results }),
+                            _ => Err(NotHandledByRunner::ValueType),
+                        },
+                        _ => Err(NotHandledByRunner::ValueType),
                     });
                 }
             }
@@ -448,7 +514,7 @@ fn exported_functions(wasm: &[u8]) -> Result<HashMap<String, FuncType>, String> 
     Ok(exports
         .into_iter()
         .filter_map(|(name, index)| {
-            let ty = types.get(*funcs.get(index as usize)? as usize)?.clone()?;
+            let ty = types.get(*funcs.get(index as usize)? as usize)?.clone();
             Some((name, ty))
         })
         .collect())
@@ -460,9 +526,9 @@ struct TestCases {
     name: String,
     /// Where the module comes from, for messages.
     origin: String,
-    exports: HashMap<String, FuncType>,
-    /// Export name -> C function name, for the declarations.
-    used: BTreeMap<String, String>,
+    exports: HashMap<String, Result<FuncType, NotHandledByRunner>>,
+    /// Export name -> C function name and type, for the declarations.
+    used: BTreeMap<String, (String, FuncType)>,
     body: Vec<String>,
     /// wast line of each assertion, in the order of execution.
     lines: Vec<usize>,
@@ -473,10 +539,11 @@ impl TestCases {
     fn new(dir: &Path, name: &str, file: &str, line: usize, wasm: &[u8]) -> Result<Self, String> {
         let wasm_path = dir.join(format!("{name}.wasm"));
         fs::write(&wasm_path, wasm).expect("write wasm");
-        let (code, stderr) = run_wasker(&wasm_path, &dir.join(format!("{name}.o")));
-        if code != Some(0) {
+        let (status, stderr) = run_wasker(&wasm_path, &dir.join(format!("{name}.o")));
+        if !status.success() {
             return Err(format!(
-                "wasker failed ({code:?}): {}",
+                "wasker failed ({}): {}",
+                describe_status(status),
                 error_message(&stderr)
             ));
         }
@@ -491,10 +558,10 @@ impl TestCases {
         })
     }
 
-    /// Build a C expression calling the function of `invoke`. None if it is not supported.
-    fn call(&mut self, invoke: &WastInvoke) -> Option<(String, Vec<ValType>)> {
+    /// Build a C expression calling the function of `invoke`, and return it with the result types.
+    fn call(&mut self, invoke: &WastInvoke) -> Result<(String, Vec<ValType>), Skip> {
         if invoke.module.is_some() {
-            return None;
+            return Err(Skip::NotHandledByRunner(NotHandledByRunner::NamedModule));
         }
         // The export name is used as a symbol name in the C source and the assembly.
         let name = invoke.name;
@@ -503,48 +570,66 @@ impl TestCases {
                 .chars()
                 .any(|c| c == '"' || c == '\\' || c.is_control())
         {
-            return None;
-        }
-        let ty = self.exports.get(name)?;
-        if ty.params.len() != invoke.args.len() || ty.results.len() > 1 {
-            return None;
+            return Err(Skip::NotHandledByRunner(NotHandledByRunner::SymbolName));
         }
         let mut args = Vec::new();
-        for (arg, &param) in invoke.args.iter().zip(&ty.params) {
-            args.push(match (arg, param) {
-                (WastArg::Core(WastArgCore::I32(v)), ValType::I32) => format!("0x{:x}u", *v as u32),
-                (WastArg::Core(WastArgCore::I64(v)), ValType::I64) => {
-                    format!("0x{:x}ull", *v as u64)
+        for arg in &invoke.args {
+            args.push(match arg {
+                WastArg::Core(WastArgCore::I32(v)) => (ValType::I32, format!("0x{:x}u", *v as u32)),
+                WastArg::Core(WastArgCore::I64(v)) => {
+                    (ValType::I64, format!("0x{:x}ull", *v as u64))
                 }
-                (WastArg::Core(WastArgCore::F32(v)), ValType::F32) => {
-                    format!("rt_f32(0x{:08x}u)", v.bits)
+                WastArg::Core(WastArgCore::F32(v)) => {
+                    (ValType::F32, format!("rt_f32(0x{:08x}u)", v.bits))
                 }
-                (WastArg::Core(WastArgCore::F64(v)), ValType::F64) => {
-                    format!("rt_f64(0x{:016x}ull)", v.bits)
+                WastArg::Core(WastArgCore::F64(v)) => {
+                    (ValType::F64, format!("rt_f64(0x{:016x}ull)", v.bits))
                 }
-                _ => return None,
+                _ => return Err(Skip::NotHandledByRunner(NotHandledByRunner::ValueType)),
             });
         }
+        let ty = match self.exports.get(name) {
+            None => return Err(Skip::Error(format!("no exported function \"{name}\""))),
+            Some(Err(kind)) => return Err(Skip::NotHandledByRunner(*kind)),
+            Some(Ok(ty)) => ty.clone(),
+        };
+        if args.iter().map(|(t, _)| *t).ne(ty.params.iter().copied()) {
+            return Err(Skip::Error(format!(
+                "arguments do not match the type of \"{name}\""
+            )));
+        }
         let id = self.used.len();
-        let c_name = self
+        let (c_name, _) = self
             .used
             .entry(name.to_string())
-            .or_insert_with(|| format!("wasm_f{id}"))
-            .clone();
-        let results = self.exports[name].results.clone();
-        Some((format!("{c_name}({})", args.join(", ")), results))
+            .or_insert_with(|| (format!("wasm_f{id}"), ty.clone()));
+        let args: Vec<String> = args.into_iter().map(|(_, v)| v).collect();
+        Ok((format!("{c_name}({})", args.join(", ")), ty.results))
     }
 
-    fn assert_return(&mut self, line: usize, invoke: &WastInvoke, results: &[WastRet]) -> bool {
-        let Some((call, result_types)) = self.call(invoke) else {
-            return false;
-        };
-        if result_types.len() != results.len() {
-            return false;
+    fn assert_return(
+        &mut self,
+        line: usize,
+        invoke: &WastInvoke,
+        results: &[WastRet],
+    ) -> Result<(), Skip> {
+        if results.len() > 1 {
+            return Err(Skip::NotHandledByRunner(NotHandledByRunner::MultiValue));
         }
-        let check = match (results.first(), result_types.first()) {
+        let expected = match results.first() {
+            None => None,
+            Some(WastRet::Core(
+                ret @ (WastRetCore::I32(_)
+                | WastRetCore::I64(_)
+                | WastRetCore::F32(_)
+                | WastRetCore::F64(_)),
+            )) => Some(ret),
+            Some(_) => return Err(Skip::NotHandledByRunner(NotHandledByRunner::ValueType)),
+        };
+        let (call, result_types) = self.call(invoke)?;
+        let check = match (expected, result_types.first()) {
             (None, None) => format!("{call}; rt_pass({line})"),
-            (Some(WastRet::Core(ret)), Some(&ty)) => match (ret, ty) {
+            (Some(ret), Some(&ty)) => match (ret, ty) {
                 (WastRetCore::I32(v), ValType::I32) => {
                     format!("rt_check_i32({line}, {call}, 0x{:x}u)", *v as u32)
                 }
@@ -569,32 +654,32 @@ impl TestCases {
                 (WastRetCore::F64(NanPattern::ArithmeticNan), ValType::F64) => {
                     format!("rt_check_f64_arithmetic_nan({line}, {call})")
                 }
-                _ => return false,
+                _ => return Err(Skip::Error("the result type does not match".to_string())),
             },
-            _ => return false,
+            _ => {
+                return Err(Skip::Error(
+                    "the number of results does not match".to_string(),
+                ))
+            }
         };
         self.body.push(format!("RT_RUN({line}, {check});"));
         self.lines.push(line);
-        true
+        Ok(())
     }
 
-    fn assert_trap(&mut self, line: usize, invoke: &WastInvoke) -> bool {
-        let Some((call, _)) = self.call(invoke) else {
-            return false;
-        };
+    fn assert_trap(&mut self, line: usize, invoke: &WastInvoke) -> Result<(), Skip> {
+        let (call, _) = self.call(invoke)?;
         self.body.push(format!("RT_EXPECT_TRAP({line}, {call});"));
         self.lines.push(line);
-        true
+        Ok(())
     }
 
-    fn invoke(&mut self, line: usize, invoke: &WastInvoke) -> bool {
-        let Some((call, _)) = self.call(invoke) else {
-            return false;
-        };
+    fn invoke(&mut self, line: usize, invoke: &WastInvoke) -> Result<(), Skip> {
+        let (call, _) = self.call(invoke)?;
         self.body
             .push(format!("RT_RUN({line}, (void){call}; rt_pass({line}));"));
         self.lines.push(line);
-        true
+        Ok(())
     }
 
     /// Generate the C program, build it with the Wasker output, run it, and collect failures.
@@ -607,8 +692,7 @@ impl TestCases {
         let mut src = format!(
             "// Generated from {origin} by tests/spectest.rs. Do not edit.\n#include \"runtime.h\"\n\n"
         );
-        for (export, c_name) in &self.used {
-            let ty = &self.exports[export];
+        for (export, (c_name, ty)) in &self.used {
             let ret = ty.results.first().map_or("void", |t| t.c_type());
             let params = if ty.params.is_empty() {
                 "void".to_string()
@@ -648,9 +732,7 @@ impl TestCases {
             return;
         }
 
-        let output = Command::new("timeout")
-            .arg(TIMEOUT_SECS)
-            .arg(&exe_path)
+        let output = command_with_timeout(&exe_path)
             .output()
             .expect("run test cases");
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -671,14 +753,10 @@ impl TestCases {
         if !done {
             // The process crashed or timed out: point at the first assertion without a result.
             let at = self.lines.iter().find(|l| !reported.contains(l));
-            let status = if output.status.code() == Some(124) {
-                "timed out".to_string()
-            } else {
-                format!("crashed ({})", output.status)
-            };
+            let status = describe_status(output.status);
             match at {
-                Some(line) => failures.push(format!("{file}:{line}: test cases {status}")),
-                None => failures.push(format!("{origin}: test cases {status}")),
+                Some(line) => failures.push(format!("{file}:{line}: test cases failed ({status})")),
+                None => failures.push(format!("{origin}: test cases failed ({status})")),
             }
         }
     }
