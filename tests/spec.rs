@@ -89,3 +89,8 @@ fn spec_br_table() {
 fn spec_block() {
     run_test("block");
 }
+
+#[test]
+fn spec_trunc_sat() {
+    run_test("trunc_sat");
+}

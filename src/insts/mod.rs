@@ -631,31 +631,31 @@ pub(super) fn parse_instruction<'a>(
             )?;
             environment.stack.push(converted.as_basic_value_enum());
         }
-        Operator::I32TruncSatF32U => {
-            let v = environment
-                .stack
-                .pop()
-                .expect("stack empty")
-                .into_float_value();
-            let converted = environment.builder.build_float_to_unsigned_int(
-                v,
-                environment.inkwell_types.i32_type,
-                "i32truncsatf32u",
-            )?;
-            environment.stack.push(converted.as_basic_value_enum());
-        }
         Operator::I32TruncSatF32S => {
             let v = environment
                 .stack
                 .pop()
                 .expect("stack empty")
                 .into_float_value();
-            let converted = environment.builder.build_float_to_signed_int(
-                v,
-                environment.inkwell_types.i32_type,
-                "i32truncsatf32s",
-            )?;
-            environment.stack.push(converted.as_basic_value_enum());
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.fptosi_sat_i32_f32,
+                &[v.into()],
+            )
+            .context("error gen I32TruncSatF32S")?;
+        }
+        Operator::I32TruncSatF32U => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.fptoui_sat_i32_f32,
+                &[v.into()],
+            )
+            .context("error gen I32TruncSatF32U")?;
         }
         Operator::I32TruncSatF64S => {
             let v = environment
@@ -663,12 +663,12 @@ pub(super) fn parse_instruction<'a>(
                 .pop()
                 .expect("stack empty")
                 .into_float_value();
-            let converted = environment.builder.build_float_to_signed_int(
-                v,
-                environment.inkwell_types.i32_type,
-                "i32truncsatf64s",
-            )?;
-            environment.stack.push(converted.as_basic_value_enum());
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.fptosi_sat_i32_f64,
+                &[v.into()],
+            )
+            .context("error gen I32TruncSatF64S")?;
         }
         Operator::I32TruncSatF64U => {
             let v = environment
@@ -676,12 +676,12 @@ pub(super) fn parse_instruction<'a>(
                 .pop()
                 .expect("stack empty")
                 .into_float_value();
-            let converted = environment.builder.build_float_to_unsigned_int(
-                v,
-                environment.inkwell_types.i32_type,
-                "i32truncsatf64u",
-            )?;
-            environment.stack.push(converted.as_basic_value_enum());
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.fptoui_sat_i32_f64,
+                &[v.into()],
+            )
+            .context("error gen I32TruncSatF64U")?;
         }
         Operator::I64TruncSatF32S => {
             let v = environment
@@ -689,12 +689,51 @@ pub(super) fn parse_instruction<'a>(
                 .pop()
                 .expect("stack empty")
                 .into_float_value();
-            let converted = environment.builder.build_float_to_signed_int(
-                v,
-                environment.inkwell_types.i64_type,
-                "i64truncsatf32s",
-            )?;
-            environment.stack.push(converted.as_basic_value_enum());
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.fptosi_sat_i64_f32,
+                &[v.into()],
+            )
+            .context("error gen I64TruncSatF32S")?;
+        }
+        Operator::I64TruncSatF32U => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.fptoui_sat_i64_f32,
+                &[v.into()],
+            )
+            .context("error gen I64TruncSatF32U")?;
+        }
+        Operator::I64TruncSatF64S => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.fptosi_sat_i64_f64,
+                &[v.into()],
+            )
+            .context("error gen I64TruncSatF64S")?;
+        }
+        Operator::I64TruncSatF64U => {
+            let v = environment
+                .stack
+                .pop()
+                .expect("stack empty")
+                .into_float_value();
+            helper_code_gen_llvm_insts(
+                environment,
+                environment.inkwell_insts.fptoui_sat_i64_f64,
+                &[v.into()],
+            )
+            .context("error gen I64TruncSatF64U")?;
         }
         Operator::F64ReinterpretI64 => {
             let v = environment
