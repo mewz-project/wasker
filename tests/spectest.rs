@@ -9,7 +9,9 @@
 #[path = "spectest/ignore_list.rs"]
 mod ignore_list;
 
+use handlebars::Handlebars;
 use ignore_list::{Ignore, IGNORE_LIST};
+use serde::Serialize;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -22,6 +24,8 @@ use wast::{QuoteWat, Wast, WastArg, WastDirective, WastExecute, WastInvoke, Wast
 const SPEC_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/spec/test/core");
 const RUNTIME_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/runtime");
 const WASKER: &str = env!("CARGO_BIN_EXE_wasker");
+/// C source of the test cases. Each assertion becomes one statement in `main`.
+const TEST_CASES_TEMPLATE: &str = include_str!("spectest/test_cases.c.hbs");
 /// Time limit for running the test cases of a module, in seconds.
 const TIMEOUT_SECS: &str = "60";
 
@@ -520,6 +524,24 @@ fn exported_functions(
         .collect())
 }
 
+/// Data rendered into `TEST_CASES_TEMPLATE`.
+#[derive(Serialize)]
+struct TestCasesSource<'a> {
+    origin: &'a str,
+    externs: Vec<Extern<'a>>,
+    /// C statements, one per assertion.
+    body: &'a [String],
+}
+
+/// Declaration of an exported function called from the test cases.
+#[derive(Serialize)]
+struct Extern<'a> {
+    export: &'a str,
+    c_name: &'a str,
+    ret: &'static str,
+    params: String,
+}
+
 /// Test cases for one module: a C program calling the exported functions of the module.
 struct TestCases {
     dir: PathBuf,
@@ -689,27 +711,36 @@ impl TestCases {
         }
         let origin = &self.origin;
 
-        let mut src = format!(
-            "// Generated from {origin} by tests/spectest.rs. Do not edit.\n#include \"runtime.h\"\n\n"
-        );
-        for (export, (c_name, ty)) in &self.used {
-            let ret = ty.results.first().map_or("void", |t| t.c_type());
-            let params = if ty.params.is_empty() {
-                "void".to_string()
-            } else {
-                ty.params
-                    .iter()
-                    .map(|t| t.c_type())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            };
-            src += &format!("extern {ret} {c_name}({params}) __asm__(\"\\\"{export}\\\"\");\n");
-        }
-        src += "\nint main(void)\n{\n    rt_init();\n    wasker_main();\n";
-        for stmt in &self.body {
-            src += &format!("    {stmt}\n");
-        }
-        src += "    return rt_finish();\n}\n";
+        let externs = self
+            .used
+            .iter()
+            .map(|(export, (c_name, ty))| Extern {
+                export,
+                c_name,
+                ret: ty.results.first().map_or("void", |t| t.c_type()),
+                params: if ty.params.is_empty() {
+                    "void".to_string()
+                } else {
+                    ty.params
+                        .iter()
+                        .map(|t| t.c_type())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                },
+            })
+            .collect();
+        let source = TestCasesSource {
+            origin,
+            externs,
+            body: &self.body,
+        };
+        let mut handlebars = Handlebars::new();
+        // The output is C, not HTML.
+        handlebars.register_escape_fn(handlebars::no_escape);
+        handlebars.set_strict_mode(true);
+        let src = handlebars
+            .render_template(TEST_CASES_TEMPLATE, &source)
+            .expect("render test cases");
 
         let c_path = self.dir.join(format!("{}_test_cases.c", self.name));
         let exe_path = self.dir.join(&self.name);

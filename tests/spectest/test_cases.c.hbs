@@ -1,0 +1,16 @@
+// Generated from {{origin}} by tests/spectest.rs. Do not edit.
+#include "runtime.h"
+
+{{#each externs}}
+extern {{ret}} {{c_name}}({{params}}) __asm__("\"{{export}}\"");
+{{/each}}
+
+int main(void)
+{
+    rt_init();
+    wasker_main();
+{{#each body}}
+    {{this}}
+{{/each}}
+    return rt_finish();
+}
