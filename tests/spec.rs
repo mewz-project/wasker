@@ -61,8 +61,33 @@ fn run_test(testcase: &str) {
 }
 
 #[test]
-fn spec_i64() {
-    run_test("i64");
+fn spec_block() {
+    run_test("block");
+}
+
+#[test]
+fn spec_br() {
+    run_test("br");
+}
+
+#[test]
+fn spec_br_if() {
+    run_test("br_if");
+}
+
+#[test]
+fn spec_br_table() {
+    run_test("br_table");
+}
+
+#[test]
+fn call() {
+    run_test("call");
+}
+
+#[test]
+fn call_indirect() {
+    run_test("call_indirect");
 }
 
 #[test]
@@ -71,8 +96,8 @@ fn spec_i32() {
 }
 
 #[test]
-fn spec_br() {
-    run_test("br");
+fn spec_i64() {
+    run_test("i64");
 }
 
 #[test]
