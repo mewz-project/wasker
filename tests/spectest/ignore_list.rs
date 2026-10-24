@@ -132,8 +132,13 @@ pub const IGNORE_LIST: &[Ignore] = &[
     },
     Ignore::Lines {
         wast: "conversions.wast",
-        lines: &[1],
-        reason: "trunc_sat instructions are not fully implemented (#116)",
+        lines: &[
+            78, 79, 80, 81, 82, 83, 84, 85, 100, 101, 102, 103, 104, 105, 106, 107, 125, 126, 127,
+            128, 129, 130, 131, 132, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 178,
+            179, 180, 181, 182, 183, 184, 185, 198, 199, 200, 201, 202, 203, 204, 205, 223, 224,
+            225, 226, 227, 228, 229, 230, 247, 248, 249, 250, 251, 252, 253, 254,
+        ],
+        reason: "does not trap (Wasker has no trap mechanism)",
     },
     Ignore::Lines {
         wast: "custom.wast",
