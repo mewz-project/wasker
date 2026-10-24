@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6](https://github.com/mewz-project/wasker/compare/v0.2.5...v0.2.6) - 2026-10-24
+
+### Other
+
+- Run spectest directly ([#153](https://github.com/mewz-project/wasker/pull/153))
+
 ## [0.2.5](https://github.com/mewz-project/wasker/compare/v0.2.4...v0.2.5) - 2026-09-27
 
 ### Other
