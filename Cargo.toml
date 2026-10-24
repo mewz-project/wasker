@@ -17,3 +17,8 @@ clap = { version = "4.5.51", features = ["derive"]}
 log = "0.4.29"
 env_logger = "0.11.6"
 pretty-hex = "0.4.1"
+
+[dev-dependencies]
+handlebars = "6.4.4"
+serde = { version = "1.0.229", features = ["derive"] }
+wast = "261.0.0"
