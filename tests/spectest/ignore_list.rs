@@ -27,26 +27,6 @@ pub const IGNORE_LIST: &[Ignore] = &[
     Ignore::AssertInvalid {
         reason: "Wasker does not validate modules",
     },
-    Ignore::Invoke {
-        wast: "f32.wast",
-        name: "min",
-        reason: "min/max do not propagate NaN or order signed zeros (#15)",
-    },
-    Ignore::Invoke {
-        wast: "f64.wast",
-        name: "min",
-        reason: "min/max do not propagate NaN or order signed zeros (#15)",
-    },
-    Ignore::Invoke {
-        wast: "f32.wast",
-        name: "max",
-        reason: "min/max do not propagate NaN or order signed zeros (#15)",
-    },
-    Ignore::Invoke {
-        wast: "f64.wast",
-        name: "max",
-        reason: "min/max do not propagate NaN or order signed zeros (#15)",
-    },
     Ignore::Lines {
         wast: "address.wast",
         lines: &[
