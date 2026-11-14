@@ -50,10 +50,12 @@ pub struct InkwellInsts<'ctx> {
     pub nearbyint_f64: FunctionValue<'ctx>,
     pub sqrt_f32: FunctionValue<'ctx>,
     pub sqrt_f64: FunctionValue<'ctx>,
-    pub minnum_f32: FunctionValue<'ctx>,
-    pub minnum_f64: FunctionValue<'ctx>,
-    pub maxnum_f32: FunctionValue<'ctx>,
-    pub maxnum_f64: FunctionValue<'ctx>,
+    pub minimum_f32: FunctionValue<'ctx>,
+    pub minimum_f64: FunctionValue<'ctx>,
+    pub maximum_f32: FunctionValue<'ctx>,
+    pub maximum_f64: FunctionValue<'ctx>,
+    pub canonicalize_f32: FunctionValue<'ctx>,
+    pub canonicalize_f64: FunctionValue<'ctx>,
     pub copysign_f32: FunctionValue<'ctx>,
     pub copysign_f64: FunctionValue<'ctx>,
 }
@@ -159,10 +161,12 @@ pub fn init_inkwell<'a>(
     let floor_f64 = module.add_function("llvm.floor.f64", ret_f64_take_f64, None);
     let sqrt_f32 = module.add_function("llvm.sqrt.f32", ret_f32_take_f32, None);
     let sqrt_f64 = module.add_function("llvm.sqrt.f64", ret_f64_take_f64, None);
-    let minnum_f32 = module.add_function("llvm.minnum.f32", ret_f32_take_f32_f32, None);
-    let minnum_f64 = module.add_function("llvm.minnum.f64", ret_f64_take_f64_f64, None);
-    let maxnum_f32 = module.add_function("llvm.maxnum.f32", ret_f32_take_f32_f32, None);
-    let maxnum_f64 = module.add_function("llvm.maxnum.f64", ret_f64_take_f64_f64, None);
+    let minimum_f32 = module.add_function("llvm.minimum.f32", ret_f32_take_f32_f32, None);
+    let minimum_f64 = module.add_function("llvm.minimum.f64", ret_f64_take_f64_f64, None);
+    let maximum_f32 = module.add_function("llvm.maximum.f32", ret_f32_take_f32_f32, None);
+    let maximum_f64 = module.add_function("llvm.maximum.f64", ret_f64_take_f64_f64, None);
+    let canonicalize_f32 = module.add_function("llvm.canonicalize.f32", ret_f32_take_f32, None);
+    let canonicalize_f64 = module.add_function("llvm.canonicalize.f64", ret_f64_take_f64, None);
     let copysign_f32 = module.add_function("llvm.copysign.f32", ret_f32_take_f32_f32, None);
     let copysign_f64 = module.add_function("llvm.copysign.f64", ret_f64_take_f64_f64, None);
 
@@ -202,10 +206,12 @@ pub fn init_inkwell<'a>(
             nearbyint_f64,
             sqrt_f32,
             sqrt_f64,
-            minnum_f32,
-            minnum_f64,
-            maxnum_f32,
-            maxnum_f64,
+            minimum_f32,
+            minimum_f64,
+            maximum_f32,
+            maximum_f64,
+            canonicalize_f32,
+            canonicalize_f64,
             copysign_f32,
             copysign_f64,
         },

@@ -983,36 +983,40 @@ pub(super) fn parse_instruction<'a>(
 
         Operator::F64Min => {
             let (v1, v2) = environment.pop2();
-            helper_code_gen_llvm_insts(
+            helper_code_gen_min_max(
                 environment,
-                environment.inkwell_insts.minnum_f64,
+                environment.inkwell_insts.minimum_f64,
+                environment.inkwell_insts.canonicalize_f64,
                 &[v1.into(), v2.into()],
             )
             .context("error gen F64Min")?;
         }
         Operator::F32Min => {
             let (v1, v2) = environment.pop2();
-            helper_code_gen_llvm_insts(
+            helper_code_gen_min_max(
                 environment,
-                environment.inkwell_insts.minnum_f32,
+                environment.inkwell_insts.minimum_f32,
+                environment.inkwell_insts.canonicalize_f32,
                 &[v1.into(), v2.into()],
             )
             .context("error gen F32Min")?;
         }
         Operator::F64Max => {
             let (v1, v2) = environment.pop2();
-            helper_code_gen_llvm_insts(
+            helper_code_gen_min_max(
                 environment,
-                environment.inkwell_insts.maxnum_f64,
+                environment.inkwell_insts.maximum_f64,
+                environment.inkwell_insts.canonicalize_f64,
                 &[v1.into(), v2.into()],
             )
             .context("error gen F64Max")?;
         }
         Operator::F32Max => {
             let (v1, v2) = environment.pop2();
-            helper_code_gen_llvm_insts(
+            helper_code_gen_min_max(
                 environment,
-                environment.inkwell_insts.maxnum_f32,
+                environment.inkwell_insts.maximum_f32,
+                environment.inkwell_insts.canonicalize_f32,
                 &[v1.into(), v2.into()],
             )
             .context("error gen F32Max")?;
@@ -1417,6 +1421,27 @@ fn helper_code_gen_llvm_insts<'a>(
     let res = environment
         .builder
         .build_call(function, args, "")?.try_as_basic_value()
+        .unwrap_basic();
+    environment.stack.push(res);
+    Ok(())
+}
+
+// llvm.minimum/maximum match Wasm min/max, except that they may return a signaling NaN as is.
+fn helper_code_gen_min_max<'a>(
+    environment: &mut Environment<'a, '_>,
+    function: FunctionValue<'a>,
+    canonicalize: FunctionValue<'a>,
+    args: &[BasicMetadataValueEnum<'a>],
+) -> Result<()> {
+    let res = environment
+        .builder
+        .build_call(function, args, "")?
+        .try_as_basic_value()
+        .unwrap_basic();
+    let res = environment
+        .builder
+        .build_call(canonicalize, &[res.into()], "")?
+        .try_as_basic_value()
         .unwrap_basic();
     environment.stack.push(res);
     Ok(())
