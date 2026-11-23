@@ -56,6 +56,14 @@ pub struct InkwellInsts<'ctx> {
     pub maxnum_f64: FunctionValue<'ctx>,
     pub copysign_f32: FunctionValue<'ctx>,
     pub copysign_f64: FunctionValue<'ctx>,
+    pub fptosi_sat_i32_f32: FunctionValue<'ctx>,
+    pub fptosi_sat_i32_f64: FunctionValue<'ctx>,
+    pub fptosi_sat_i64_f32: FunctionValue<'ctx>,
+    pub fptosi_sat_i64_f64: FunctionValue<'ctx>,
+    pub fptoui_sat_i32_f32: FunctionValue<'ctx>,
+    pub fptoui_sat_i32_f64: FunctionValue<'ctx>,
+    pub fptoui_sat_i64_f32: FunctionValue<'ctx>,
+    pub fptoui_sat_i64_f64: FunctionValue<'ctx>,
 }
 
 impl<'ctx> InkwellTypes<'ctx> {
@@ -139,6 +147,10 @@ pub fn init_inkwell<'a>(
     let ret_f32_take_f32 = f32_type.fn_type(&[f32_ty_basic_md], false);
     let ret_f32_take_f32_f32 = f32_type.fn_type(&[f32_ty_basic_md, f32_ty_basic_md], false);
     let ret_f64_take_f64_f64 = f64_type.fn_type(&[f64_ty_basic_md, f64_ty_basic_md], false);
+    let ret_i32_take_f32 = i32_type.fn_type(&[f32_ty_basic_md], false);
+    let ret_i32_take_f64 = i32_type.fn_type(&[f64_ty_basic_md], false);
+    let ret_i64_take_f32 = i64_type.fn_type(&[f32_ty_basic_md], false);
+    let ret_i64_take_f64 = i64_type.fn_type(&[f64_ty_basic_md], false);
 
     // Declare insts
     let ctlz_i32 = module.add_function("llvm.ctlz.i32", ret_i32_take_i32_i1, None);
@@ -165,6 +177,14 @@ pub fn init_inkwell<'a>(
     let maxnum_f64 = module.add_function("llvm.maxnum.f64", ret_f64_take_f64_f64, None);
     let copysign_f32 = module.add_function("llvm.copysign.f32", ret_f32_take_f32_f32, None);
     let copysign_f64 = module.add_function("llvm.copysign.f64", ret_f64_take_f64_f64, None);
+    let fptosi_sat_i32_f32 = module.add_function("llvm.fptosi.sat.i32.f32", ret_i32_take_f32, None);
+    let fptosi_sat_i32_f64 = module.add_function("llvm.fptosi.sat.i32.f64", ret_i32_take_f64, None);
+    let fptosi_sat_i64_f32 = module.add_function("llvm.fptosi.sat.i64.f32", ret_i64_take_f32, None);
+    let fptosi_sat_i64_f64 = module.add_function("llvm.fptosi.sat.i64.f64", ret_i64_take_f64, None);
+    let fptoui_sat_i32_f32 = module.add_function("llvm.fptoui.sat.i32.f32", ret_i32_take_f32, None);
+    let fptoui_sat_i32_f64 = module.add_function("llvm.fptoui.sat.i32.f64", ret_i32_take_f64, None);
+    let fptoui_sat_i64_f32 = module.add_function("llvm.fptoui.sat.i64.f32", ret_i64_take_f32, None);
+    let fptoui_sat_i64_f64 = module.add_function("llvm.fptoui.sat.i64.f64", ret_i64_take_f64, None);
 
     (
         InkwellTypes {
@@ -208,6 +228,14 @@ pub fn init_inkwell<'a>(
             maxnum_f64,
             copysign_f32,
             copysign_f64,
+            fptosi_sat_i32_f32,
+            fptosi_sat_i32_f64,
+            fptosi_sat_i64_f32,
+            fptosi_sat_i64_f64,
+            fptoui_sat_i32_f32,
+            fptoui_sat_i32_f64,
+            fptoui_sat_i64_f32,
+            fptoui_sat_i64_f64,
         },
     )
 }
