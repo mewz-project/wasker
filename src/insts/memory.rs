@@ -67,22 +67,14 @@ pub fn memory_copy(
     assert_eq!(dst_mem, 0);
     assert_eq!(src_mem, 0);
 
-    let len = environment.stack.pop().expect("stack empty");
-    let src = environment.stack.pop().expect("stack empty");
-    let dst = environment.stack.pop().expect("stack empty");
-    let src_addr = resolve_pointer(
-        src.into_int_value(),
-        environment.inkwell_types.i32_ptr_type,
-        environment,
-    )?;
-    let dst_addr = resolve_pointer(
-        dst.into_int_value(),
-        environment.inkwell_types.i32_ptr_type,
-        environment,
-    )?;
+    let len = zero_extend_i64(environment.stack.pop().expect("stack empty"), environment)?;
+    let src = zero_extend_i64(environment.stack.pop().expect("stack empty"), environment)?;
+    let dst = zero_extend_i64(environment.stack.pop().expect("stack empty"), environment)?;
+    let src_addr = resolve_pointer(src, environment.inkwell_types.i32_ptr_type, environment)?;
+    let dst_addr = resolve_pointer(dst, environment.inkwell_types.i32_ptr_type, environment)?;
     environment
         .builder
-        .build_memmove(dst_addr, 1, src_addr, 1, len.into_int_value())
+        .build_memmove(dst_addr, 1, src_addr, 1, len)
         .map_err(|e| anyhow!(e))
         .context("error build_memmove")?;
     Ok(())
@@ -92,14 +84,10 @@ pub fn memory_fill(environment: &mut Environment<'_, '_>, mem: u32) -> Result<()
     // TODO: multi memory
     assert_eq!(mem, 0);
 
-    let len = environment.stack.pop().expect("stack empty");
+    let len = zero_extend_i64(environment.stack.pop().expect("stack empty"), environment)?;
     let val = environment.stack.pop().expect("stack empty");
-    let dst = environment.stack.pop().expect("stack empty");
-    let dst_addr = resolve_pointer(
-        dst.into_int_value(),
-        environment.inkwell_types.i32_ptr_type,
-        environment,
-    )?;
+    let dst = zero_extend_i64(environment.stack.pop().expect("stack empty"), environment)?;
+    let dst_addr = resolve_pointer(dst, environment.inkwell_types.i32_ptr_type, environment)?;
     let val_i8 = environment.builder.build_int_truncate(
         val.into_int_value(),
         environment.inkwell_types.i8_type,
@@ -107,7 +95,7 @@ pub fn memory_fill(environment: &mut Environment<'_, '_>, mem: u32) -> Result<()
     )?;
     environment
         .builder
-        .build_memset(dst_addr, 1, val_i8, len.into_int_value())
+        .build_memset(dst_addr, 1, val_i8, len)
         .map_err(|e| anyhow!(e))
         .context("error build_memset")?;
     Ok(())
@@ -225,6 +213,17 @@ pub fn generate_store<'a>(
     }
 
     Ok(())
+}
+
+fn zero_extend_i64<'a>(
+    value: inkwell::values::BasicValueEnum<'a>,
+    environment: &mut Environment<'a, '_>,
+) -> Result<IntValue<'a>> {
+    Ok(environment.builder.build_int_z_extend(
+        value.into_int_value(),
+        environment.inkwell_types.i64_type,
+        "zext_i64",
+    )?)
 }
 
 fn resolve_pointer<'a>(
