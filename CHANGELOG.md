@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/mewz-project/wasker/compare/v0.2.5...v0.3.0) - 2026-11-28
+
+### Fixed
+
+- fix trunc_sat operations ([#144](https://github.com/mewz-project/wasker/pull/144))
+
+### Other
+
+- Zero-extend memory.copy/memory.fill operands to i64 ([#166](https://github.com/mewz-project/wasker/pull/166))
+- propagate NaN and order signed zeros in float min/max ([#162](https://github.com/mewz-project/wasker/pull/162))
+- Run spectest directly ([#153](https://github.com/mewz-project/wasker/pull/153))
+
 ## [0.2.5](https://github.com/mewz-project/wasker/compare/v0.2.4...v0.2.5) - 2026-09-27
 
 ### Other
